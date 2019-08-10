@@ -1,0 +1,84 @@
+POST https://www.googleapis.com/compute/v1/projects/silken-impulse-217423/zones/us-west1-b/instances
+
+{
+  "kind": "compute#instance",
+  "name": "deepdrive-eval-5",
+  "zone": "projects/silken-impulse-217423/zones/us-west1-b",
+  "machineType": "projects/silken-impulse-217423/zones/us-west1-b/machineTypes/n1-standard-8",
+  "displayDevice": {
+    "enableDisplay": false
+  },
+  "metadata": {
+    "kind": "compute#metadata",
+    "items": [
+      {
+        "key": "startup-script",
+        "value": "sudo docker pull deepdriveio/problem-worker"
+      }
+    ]
+  },
+  "tags": {
+    "items": []
+  },
+  "guestAccelerators": [
+    {
+      "acceleratorType": "projects/silken-impulse-217423/zones/us-west1-b/acceleratorTypes/nvidia-tesla-p100",
+      "acceleratorCount": 1
+    }
+  ],
+  "disks": [
+    {
+      "kind": "compute#attachedDisk",
+      "type": "PERSISTENT",
+      "boot": true,
+      "mode": "READ_WRITE",
+      "autoDelete": true,
+      "deviceName": "deepdrive-eval-5",
+      "initializeParams": {
+        "sourceImage": "projects/silken-impulse-217423/global/images/deepdrive-eval-image-5",
+        "diskType": "projects/silken-impulse-217423/zones/us-west1-b/diskTypes/pd-ssd",
+        "diskSizeGb": "100"
+      },
+      "diskEncryptionKey": {}
+    }
+  ],
+  "canIpForward": false,
+  "networkInterfaces": [
+    {
+      "kind": "compute#networkInterface",
+      "subnetwork": "projects/silken-impulse-217423/regions/us-west1/subnetworks/default",
+      "accessConfigs": [
+        {
+          "kind": "compute#accessConfig",
+          "name": "External NAT",
+          "type": "ONE_TO_ONE_NAT",
+          "networkTier": "PREMIUM"
+        }
+      ],
+      "aliasIpRanges": []
+    }
+  ],
+  "description": "",
+  "labels": {
+    "deepdrive": "",
+    "deepdrive-eval": ""
+  },
+  "scheduling": {
+    "preemptible": false,
+    "onHostMaintenance": "TERMINATE",
+    "automaticRestart": true,
+    "nodeAffinities": []
+  },
+  "deletionProtection": false,
+  "reservationAffinity": {
+    "consumeReservationType": "ANY_RESERVATION"
+  },
+  "serviceAccounts": [
+    {
+      "email": "900617673776-compute@developer.gserviceaccount.com",
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    }
+  ]
+}

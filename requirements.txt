@@ -1,0 +1,8 @@
+requests>=2.22.0
+PyYAML>=5.1.1
+gunicorn>=19.9.0
+botleague-helpers
+python-box
+google-cloud-storage>=1.15.0
+google-auth>=1.6.3
+loguru

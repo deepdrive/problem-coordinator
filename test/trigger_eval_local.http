@@ -1,0 +1,11 @@
+POST http://0.0.0.0:8000/eval/domain_randomization
+Content-Type: application/json
+
+{
+  "eval_id": "SDFSDFSDFDS",
+  "eval_key": "KSJDHFKSJDHF",
+  "seed": 1,
+  "docker_tag": "asdf/asdf:asdf"
+}
+
+###

@@ -1,0 +1,10 @@
+POST https://www.googleapis.com/compute/v1/projects/silken-impulse-217423/global/images
+
+{
+  "kind": "compute#image",
+  "labels": {
+    "deepdrive": ""
+  },
+  "name": "deepdrive-eval-image",
+  "sourceDisk": "projects/silken-impulse-217423/zones/us-west1-b/disks/nvidia-gpu-cloud-tensorflow-image-1-vm-3"
+}

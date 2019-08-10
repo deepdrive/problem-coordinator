@@ -1,0 +1,93 @@
+{
+  "canIpForward": false,
+  "cpuPlatform": "Intel Broadwell",
+  "creationTimestamp": "2019-08-08T12:58:03.147-07:00",
+  "deletionProtection": false,
+  "description": "",
+  "disks": [
+    {
+      "autoDelete": true,
+      "boot": true,
+      "deviceName": "deepdrive-eval-3",
+      "guestOsFeatures": [
+        {
+          "type": "VIRTIO_SCSI_MULTIQUEUE"
+        }
+      ],
+      "index": 0,
+      "interface": "SCSI",
+      "kind": "compute#attachedDisk",
+      "licenses": [
+        "projects/ubuntu-os-cloud/global/licenses/ubuntu-1804-lts",
+        "projects/nvidia-ngc-public/global/licenses/nvidia-ngc-image"
+      ],
+      "mode": "READ_WRITE",
+      "source": "projects/silken-impulse-217423/zones/us-west1-b/disks/deepdrive-eval-3",
+      "type": "PERSISTENT"
+    }
+  ],
+  "displayDevice": {
+    "enableDisplay": false
+  },
+  "guestAccelerators": [
+    {
+      "acceleratorCount": 1,
+      "acceleratorType": "projects/silken-impulse-217423/zones/us-west1-b/acceleratorTypes/nvidia-tesla-p100"
+    }
+  ],
+  "id": "2566700530208456741",
+  "kind": "compute#instance",
+  "labelFingerprint": "fdpsNmaEiPI=",
+  "labels": {
+    "deepdrive": "",
+    "deepdrive-eval": ""
+  },
+  "machineType": "projects/silken-impulse-217423/zones/us-west1-b/machineTypes/n1-standard-8",
+  "metadata": {
+    "fingerprint": "0RTpotZgz14=",
+    "kind": "compute#metadata"
+  },
+  "name": "deepdrive-eval-3",
+  "networkInterfaces": [
+    {
+      "accessConfigs": [
+        {
+          "kind": "compute#accessConfig",
+          "name": "External NAT",
+          "natIP": "35.247.113.135",
+          "networkTier": "PREMIUM",
+          "type": "ONE_TO_ONE_NAT"
+        }
+      ],
+      "fingerprint": "CjpkYVdd2n0=",
+      "kind": "compute#networkInterface",
+      "name": "nic0",
+      "network": "projects/silken-impulse-217423/global/networks/default",
+      "networkIP": "10.138.0.32",
+      "subnetwork": "projects/silken-impulse-217423/regions/us-west1/subnetworks/default"
+    }
+  ],
+  "reservationAffinity": {
+    "consumeReservationType": "ANY_RESERVATION"
+  },
+  "scheduling": {
+    "automaticRestart": true,
+    "onHostMaintenance": "TERMINATE",
+    "preemptible": false
+  },
+  "selfLink": "projects/silken-impulse-217423/zones/us-west1-b/instances/deepdrive-eval-3",
+  "serviceAccounts": [
+    {
+      "email": "900617673776-compute@developer.gserviceaccount.com",
+      "scopes": [
+        "https://www.googleapis.com/auth/cloud-platform"
+      ]
+    }
+  ],
+  "startRestricted": false,
+  "status": "RUNNING",
+  "tags": {
+    "fingerprint": "42WmSpB8rSM="
+  },
+  "zone": "projects/silken-impulse-217423/zones/us-west1-b"
+}

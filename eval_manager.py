@@ -8,7 +8,7 @@ from botleague_helpers.db import DB
 from constants import INSTANCE_STATUS_AVAILABLE, INSTANCE_STATUS_USED, \
     JOB_STATUS_TO_START, GCP_ZONE, GCP_PROJECT, INSTANCE_EVAL_LABEL, \
     SUPPORTED_PROBLEMS, ROOT, INSTANCE_CONFIG_PATH, INSTANCE_NAME_PREFIX, \
-    MAX_EVAL_INSTANCES, JOB_STATUS_RUNNING
+    MAX_EVAL_INSTANCES, JOB_STATUS_RUNNING, JOB_STATUS_FINISHED
 from common import get_jobs_db, get_instances_db
 from logs import log
 
@@ -64,7 +64,7 @@ class EvaluationManager:
         self.zone: str = GCP_ZONE
 
     def loop(self):
-        self.check_for_new_jobs()
+        self.trigger_jobs()
         self.check_gce_ops_in_progress()
         self.check_jobs_in_progress()
         # TODO: self.stop_idle_instances()
@@ -72,11 +72,10 @@ class EvaluationManager:
         #  problem timeout
         # TODO: self.delete_idle_instances_over_threshold()
 
-    def check_for_new_jobs(self) -> BoxList:
+    def trigger_jobs(self) -> BoxList:
         new_jobs = BoxList()
         for job in self.jobs_db.where('status', '==', JOB_STATUS_TO_START):
             job = self.trigger_eval(job)
-            # TODO: If job not started, keep checking for available instances
             new_jobs.append(job)
 
             # TODO: Deal with async operation futures returned from trigger
@@ -84,9 +83,9 @@ class EvaluationManager:
             #  Start instance
             # TODO: Check for failed / crashed instance once per minute
             # TODO: Stop instances if they have been idle for longer than timeout
-            # TODO: Cap total max instances
+            # TODO: Cap total instances
             # TODO: Cap instances per bot owner, using first part of docker tag
-            # TODO: Delete instances over threshold
+            # TODO: Delete instances over threshold of stopped+started
 
         return new_jobs
 
@@ -250,7 +249,7 @@ def main():
     # compute = googleapiclient.discovery.build('compute', 'v1')
     # eval_instances = list_instances(compute, label='deepdrive-eval')
     eval_mgr = EvaluationManager()
-    eval_mgr.check_for_new_jobs()
+    eval_mgr.trigger_jobs()
 
 
 if __name__ == '__main__':

@@ -76,7 +76,7 @@ def trigger_test_job(instances_db, job_id, jobs_db, callback):
 
     try:
         eval_mgr.jobs_db.set(job_id, test_job)
-        new_jobs = eval_mgr.check_for_new_jobs()
+        new_jobs = eval_mgr.trigger_jobs()
         if new_jobs:
             # We don't actually start instances but we act like we did.
             assert new_jobs[0].status == JOB_STATUS_TO_START or \

@@ -126,10 +126,11 @@ def main():
     zone = constants.GCP_ZONE
     instances = compute.instances().list(project=project,
                                          zone=zone).execute()
-    operation = create_instance(compute=compute,
-                                project=project, zone=zone,
-                                instance_name='deepdrive-eval-test')
-    print(operation)
+    # operation = create_instance(compute=compute,
+    #                             project=project, zone=zone,
+    #                             instance_name='deepdrive-eval-test')
+    # print(operation)
+
     pass
     # wait_for_operation()
 

@@ -57,16 +57,19 @@ def test_job_trigger():
 def manually_trigger_job():
     job_id = 'TEST_JOB_' + utils.generate_rand_alphanumeric(32)
     trigger_test_job(instances_db=None, job_id=job_id, jobs_db=None,
-                     callback='https://a3d66072.ngrok.io/results')
+                     callback='https://a3d66072.ngrok.io/results',
+                     docker_tag='deepdriveio/deepdrive:bot_domain_randomization')
 
 
-def trigger_test_job(instances_db, job_id, jobs_db, callback):
+def trigger_test_job(instances_db, job_id, jobs_db, callback, docker_tag=None):
+    docker_tag = docker_tag or 'deepdriveio/problem-worker-test'
     eval_mgr = EvaluationManager(jobs_db=jobs_db, instances_db=instances_db)
+    eval_mgr.check_for_finished_jobs()
     test_job = Box(results_callback=callback,
                    status=JOB_STATUS_TO_START,
                    id=job_id,
                    eval_spec=Box(
-                       docker_tag='deepdriveio/problem-worker-test',
+                       docker_tag=docker_tag,
                        eval_id=job_id,
                        eval_key='fake_eval_key',
                        seed=1,

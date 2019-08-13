@@ -100,6 +100,13 @@ class EvaluationManager:
                 # TODO: Set job error timeout
                 pass
 
+    def check_for_finished_jobs(self):
+        for job in self.jobs_db.where('status', '==', JOB_STATUS_FINISHED):
+            instance = self.instances_db.get(job.instance_id)
+            if instance.status == INSTANCE_STATUS_USED:
+                instance.status = INSTANCE_STATUS_AVAILABLE
+                self.instances_db.set(job.instance_id, instance)
+
     def check_gce_ops_in_progress(self):
         ops_still_in_progress = BoxList()
         for op in self.gce_ops_in_progress:

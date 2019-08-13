@@ -2,19 +2,21 @@ import os
 
 ###############################################################
 # WARNING: These are shared with                              #
-# https://github.com/deepdrive/problem-endpoint/constants.py #
+# https://github.com/deepdrive/problem-coordinator/constants.py #
 ###############################################################
 
 GCP_REGION = 'us-west1'
 GCP_ZONE = GCP_REGION + '-b'
 GCP_PROJECT = os.environ.get('GOOGLE_CLOUD_PROJECT') or \
-              os.environ.get('GCP_PROJECT')
+              os.environ.get('GCP_PROJECT') or 'silken-impulse-217423'
 
 STACKDRIVER_LOG_NAME = 'deepdrive-problem-endpoint'
 INSTANCE_EVAL_LABEL = 'deepdrive-eval'
 EVAL_INSTANCES_COLLECTION_NAME = 'deepdrive_eval_instances'
 EVAL_JOBS_COLLECTION_NAME = 'deepdrive_eval_jobs'
 EVAL_LOOP_ID = 'deepdrive_eval_loop'
+
+CONTAINER_RUN_OPTIONS = dict(runtime='nvidia', network='host')
 
 # Needs to be divisible by 2 as we start a problem and bot instance for each
 # eval
@@ -24,7 +26,7 @@ MAX_EVAL_INSTANCES = 6
 BOTLEAGUE_LOG_BUCKET = 'deepdriveio'
 
 BOTLEAGUE_LOG_DIR = 'botleague_eval_logs'
-BOTLEAGUE_RESULTS_DIR = '/mnt/botleague'
+BOTLEAGUE_RESULTS_DIR = '/mnt/botleague_results'
 BOTLEAGUE_RESULTS_FILEPATH = f'{BOTLEAGUE_RESULTS_DIR}/results.json'
 BOTLEAGUE_RESULTS_CALLBACK = 'https://sim.deepdrive.io/results'
 

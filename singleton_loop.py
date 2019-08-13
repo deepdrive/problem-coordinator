@@ -26,7 +26,7 @@ class SingletonLoop:
         self.fn = fn
         self.loop_name = loop_name
         self.db = get_db(loop_name + '_semaphore', use_boxes=True,
-                                      force_firestore_db=force_firestore_db)
+                         force_firestore_db=force_firestore_db)
         self.kill_now = False
         self.id = utils.generate_rand_alphanumeric(10)
         self.previous_status = None

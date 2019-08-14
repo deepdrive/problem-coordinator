@@ -1,6 +1,6 @@
 from botleague_helpers.db import get_db
 
-import constants
+from problem_constants import constants
 
 
 def get_jobs_db():

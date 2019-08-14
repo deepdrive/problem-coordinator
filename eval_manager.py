@@ -2,13 +2,19 @@ import time
 
 import googleapiclient.discovery
 import os
+
+import requests
+from botleague_helpers.config import blconfig
 from box import Box, BoxList
 from botleague_helpers.db import DB
+from google.cloud.firestore_v1 import SERVER_TIMESTAMP
+from problem_constants import constants
 
-from constants import INSTANCE_STATUS_AVAILABLE, INSTANCE_STATUS_USED, \
-    JOB_STATUS_TO_START, GCP_ZONE, GCP_PROJECT, INSTANCE_EVAL_LABEL, \
-    SUPPORTED_PROBLEMS, ROOT, INSTANCE_CONFIG_PATH, INSTANCE_NAME_PREFIX, \
-    MAX_EVAL_INSTANCES, JOB_STATUS_RUNNING, JOB_STATUS_FINISHED
+from problem_constants.constants import INSTANCE_STATUS_AVAILABLE, \
+    INSTANCE_STATUS_USED, JOB_STATUS_CREATED, GCP_ZONE, GCP_PROJECT, \
+    INSTANCE_EVAL_LABEL, SUPPORTED_PROBLEMS, ROOT, INSTANCE_CONFIG_PATH, \
+    INSTANCE_NAME_PREFIX, MAX_EVAL_INSTANCES, JOB_STATUS_RUNNING, \
+    JOB_STATUS_FINISHED, JOB_STATUS_ASSIGNED, JOB_STATUS_TIMED_OUT
 from common import get_jobs_db, get_instances_db
 from logs import log
 
@@ -62,8 +68,13 @@ class EvaluationManager:
         self.gce = googleapiclient.discovery.build('compute', 'v1')
         self.project: str = GCP_PROJECT
         self.zone: str = GCP_ZONE
+        self.last_cronitor_ping_time = -1
 
     def loop(self):
+        now = time.time()
+        self.last_cronitor_ping_time = ping_cronitor_every_minute(
+            now, self.last_cronitor_ping_time, 'run')
+
         self.trigger_jobs()
         self.check_gce_ops_in_progress()
         self.check_jobs_in_progress()
@@ -72,13 +83,15 @@ class EvaluationManager:
         #  problem timeout
         # TODO: self.delete_idle_instances_over_threshold()
 
+        self.last_cronitor_ping_time = ping_cronitor_every_minute(
+            now, self.last_cronitor_ping_time, 'complete')
+
     def trigger_jobs(self) -> BoxList:
         new_jobs = BoxList()
-        for job in self.jobs_db.where('status', '==', JOB_STATUS_TO_START):
+        for job in self.jobs_db.where('status', '==', JOB_STATUS_CREATED):
             job = self.trigger_eval(job)
             new_jobs.append(job)
 
-            # TODO: Deal with async operation futures returned from trigger
             #  Create instance
             #  Start instance
             # TODO: Check for failed / crashed instance once per minute
@@ -91,15 +104,36 @@ class EvaluationManager:
 
     def check_jobs_in_progress(self):
         for job in self.jobs_db.where('status', '==', JOB_STATUS_RUNNING):
-            if time.time() - job.started_at.timestamp() > job.max_seconds:
-                log.error(f'Job {job} took longer than {job.max_seconds}, '
-                          f'stopping instance {job.instance_id}')
+            if not Box(job, default_box=True).problem_def.max_seconds:
+                log.warning('No max_seconds in problem definition, defaulting'
+                            ' to 5 minutes')
+                max_seconds = 60 * 5
+            else:
+                max_seconds = job.problem_def.max_seconds
+            if time.time() - job.started_at.timestamp() > max_seconds:
+                log.error(f'Job {job} took longer than {max_seconds}, '
+                          f'should stop instance: {job.instance_id}!')
+                job.status = JOB_STATUS_TIMED_OUT
+                self.jobs_db.set(job.id, job)
+
+                # TODO: Move this into problem-constants and rename
+                #  problem-helpers as it's shared with problem-worker
+                instance = self.instances_db.get(job.instance_id)
+                if instance.status != constants.INSTANCE_STATUS_AVAILABLE:
+                    instance.status = constants.INSTANCE_STATUS_AVAILABLE
+                    instance.time_last_available = SERVER_TIMESTAMP
+                    self.instances_db.set(job.instance_id, instance)
+                    log.success(f'Made instance {job.instance_id} available')
+
                 # self.gce.instances()
                 # TODO: Stop the instance
                 # TODO: Set job error timeout
                 pass
 
     def check_for_finished_jobs(self):
+        # TODO: Make this more efficient by querying instances or just
+        #   disable or don't do this at all in the loop
+        #   since callback will do it for us.
         for job in self.jobs_db.where('status', '==', JOB_STATUS_FINISHED):
             instance = self.instances_db.get(job.instance_id)
             if instance.status == INSTANCE_STATUS_USED:
@@ -109,12 +143,16 @@ class EvaluationManager:
     def check_gce_ops_in_progress(self):
         ops_still_in_progress = BoxList()
         for op in self.gce_ops_in_progress:
-            op_result = Box(self.gce.zoneOperations().get(
-                project=self.project,
-                zone=self.zone,
-                operation=op).execute())
 
-            if op_result['status'] == 'DONE':
+            try:
+                op_result = Box(self.gce.zoneOperations().get(
+                    project=self.project,
+                    zone=self.zone,
+                    operation=op.name).execute())
+            except:
+                log.exception('Could not get op_result')
+                break
+            if op_result.status == 'DONE':
                 if 'error' in op_result:
                     log.error(
                         f'GCE operation resulted in an error: '
@@ -155,7 +193,7 @@ class EvaluationManager:
                 # it calls back to /results very quickly before setting status.
                 self.save_eval_instance(Box(id=inst.id, inst=inst,
                                             status=INSTANCE_STATUS_USED))
-                self.set_job_to_start(inst, job)
+                self.assign_job_to_instance(inst, job)
 
                 log.success(f'Marked job {job.id} to start on '
                             f'instance {inst.id} which was already running')
@@ -164,7 +202,7 @@ class EvaluationManager:
             if stopped_instances:
                 inst = stopped_instances[0]
                 job.instance_id = inst.id
-                self.set_job_to_start(inst, job)
+                self.assign_job_to_instance(inst, job)
                 self.gce_ops_in_progress.append(self.start_instance(inst))
                 log.success(
                     f'No running instances for job {job.id}, so started '
@@ -185,8 +223,9 @@ class EvaluationManager:
             zone=self.zone,
             instance=inst.name).execute()
 
-    def set_job_to_start(self, instance, job):
-        job.status = JOB_STATUS_TO_START  # TODO: cas
+    def assign_job_to_instance(self, instance, job):
+        # TODO: Compare and swap
+        job.status = JOB_STATUS_ASSIGNED
         job.instance_id = instance.id
         job.started_at = time.time()
         self.save_job(job)
@@ -243,6 +282,19 @@ class EvaluationManager:
             next_index = max(current_instance_indexes) + 1
         instance_name = INSTANCE_NAME_PREFIX + str(next_index)
         return instance_name
+
+
+def ping_cronitor_every_minute(now, last_ping_time, state='complete') -> int:
+    if blconfig.is_test:
+        ret = last_ping_time
+    elif last_ping_time == -1 or now - last_ping_time > 60:
+        log.debug(f'Pinging cronitor with {state}')
+        # Ping cronitor every minute
+        requests.get('https://cronitor.link/MJ8I4x/%s' % state, timeout=10)
+        ret = now
+    else:
+        ret = last_ping_time
+    return ret
 
 
 def main():

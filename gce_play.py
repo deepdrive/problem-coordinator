@@ -35,7 +35,7 @@ from six.moves import input
 
 
 # [START list_instances]
-import constants
+from problem_constants import constants
 from utils import read_json
 
 ROOT = os.path.dirname(os.path.realpath(__file__))

@@ -1,7 +1,7 @@
 .PHONY: build push run bash test deploy reboot_vm prepare
 
-TAG=gcr.io/silken-impulse-217423/deepdrive-service
-SSH=gcloud compute ssh deepdrive-service
+TAG=gcr.io/silken-impulse-217423/deepdrive-problem-coordinator
+SSH=gcloud compute ssh deepdrive-problem-coordinator
 
 build:
 	docker build -t $(TAG) .

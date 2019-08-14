@@ -1,12 +1,17 @@
+from datetime import datetime
 import signal
 import time
 
 import traceback
 from typing import Union
 
+import loguru
+import requests
+from botleague_helpers.config import blconfig
 from botleague_helpers.db import get_db
+from box import Box
 
-import constants
+from problem_constants import constants
 import utils
 from eval_manager import EvaluationManager
 from logs import log
@@ -28,13 +33,19 @@ class SingletonLoop:
         self.db = get_db(loop_name + '_semaphore', use_boxes=True,
                          force_firestore_db=force_firestore_db)
         self.kill_now = False
-        self.id = utils.generate_rand_alphanumeric(10)
+        self.id = datetime.now().strftime(
+            f'%Y-%m-%d__%I-%M-%S%p#'
+            f'{utils.generate_rand_alphanumeric(3)}')
         self.previous_status = None
         signal.signal(signal.SIGINT, self.exit_gracefully)
         signal.signal(signal.SIGTERM, self.exit_gracefully)
 
     def run(self):
-        self.obtain_semaphore()
+        if not self.obtain_semaphore():
+            log.error('Could not obtain semaphore! Check to see if other loop '
+                      'is running!')
+            time.sleep(1)  # We'll be in a reboot loop until shutdown
+            return
         log.success(f'Running {self.loop_name}, loop_id: {self.id}')
         while not self.semaphore_released():
             if self.kill_now:
@@ -43,13 +54,17 @@ class SingletonLoop:
             else:
                 self.fn()
                 time.sleep(1)
-                # TODO: Ping cronitor every minute
 
-    def obtain_semaphore(self, timeout=None):
+    @log.catch
+    def obtain_semaphore(self, timeout=None) -> bool:
         start = time.time()
         # TODO: Avoid polling by creating a Firestore watch and using a
         #   mutex to avoid multiple threads processing the watch.
-        if self.db.get(STATUS) == STOPPED:
+        if self.db.get(STATUS) == Box():
+            log.warning('No semaphore document found, creating one!')
+            self.db.set(STATUS, RUNNING + self.id)
+            return True
+        elif self.db.get(STATUS) in [Box(), STOPPED]:
             self.db.set(STATUS, RUNNING + self.id)
             return True
         self.request_semaphore()
@@ -58,6 +73,8 @@ class SingletonLoop:
         while not self.granted_semaphore():
             log.info('Waiting for other eval loop to end')
             if self.kill_now:
+                log.warning('Killing loop while requesting semaphore, '
+                            'here be dragons!')
                 if self.db.compare_and_swap(STATUS, REQUESTED + self.id,
                                             self.previous_status):
                     # Other loop never saw us, good!
@@ -66,21 +83,21 @@ class SingletonLoop:
                     # We have problems
                     if self.db.get(STATUS) == GRANTED + self.id:
                         # Other loop beat us in a race to set status
-                        # and will die!
+                        # and released so thinks we own the semaphore.
                         self.release_semaphore()
                         # TODO: Create an alert from this log.
-                        log.error(f'No {self.id} running! Needs manual start')
+                        raise RuntimeError(f'No {self.id} running! '
+                                           f'Needs manual start')
                     else:
                         # Could be that a third loop requested.
                         self.release_semaphore()
                         # TODO: Create an alert from this log.
-                        log.error(f'Race condition encountered in {self.id} '
-                                  f'Needs manual start')
+                        raise RuntimeError(f'Race condition encountered in '
+                                           f'{self.id} Needs manual start')
             elif timeout is not None and time.time() - start > timeout:
                 return False
             else:
                 time.sleep(1)
-        log.info('Waiting for other eval loop to end')
         return True
 
     def request_semaphore(self):
@@ -135,8 +152,8 @@ class SingletonLoop:
 
     def release_semaphore(self):
         self.db.set(STATUS, STOPPED)
+        log.info(f'Released semaphore for {self.id}')
 
     def exit_gracefully(self, signum, frame):
         log.info(f'Exiting gracefully from {signum} {frame}')
         self.kill_now = True
-

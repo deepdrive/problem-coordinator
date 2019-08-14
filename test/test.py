@@ -4,8 +4,8 @@ from botleague_helpers.db import get_db
 from box import Box
 
 import utils
-from constants import JOB_STATUS_TO_START, INSTANCE_STATUS_USED, \
-    BOTLEAGUE_RESULTS_CALLBACK
+from problem_constants.constants import JOB_STATUS_CREATED, \
+    INSTANCE_STATUS_USED, RESULTS_CALLBACK
 from eval_manager import EvaluationManager
 from singleton_loop import SingletonLoop, STATUS, REQUESTED, RUNNING
 from logs import log
@@ -19,11 +19,18 @@ def test_singleton_loop_firestore():
     singleton_loop_helper(use_firestore=True)
 
 
-def singleton_loop_helper(use_firestore):
-    def loop_fn():
-        print('yoyoyo')
+def test_singleton_loop_orphaned_runner():
+    loop_fn, name = get_test_loop_stuff()
+    loop1 = SingletonLoop(name, loop_fn, force_firestore_db=False)
+    loop2 = SingletonLoop(name, loop_fn, force_firestore_db=False)
+    loop1.db.set(STATUS, RUNNING + loop2.id)
+    assert not loop1.obtain_semaphore(timeout=0)
+    loop1.kill_now = True
+    assert not loop1.obtain_semaphore(timeout=0)
 
-    name = 'test_loop_' + utils.generate_rand_alphanumeric(32)
+
+def singleton_loop_helper(use_firestore):
+    loop_fn, name = get_test_loop_stuff()
     loop1 = SingletonLoop(name, loop_fn, force_firestore_db=use_firestore)
     loop1.release_semaphore()
     assert loop1.semaphore_released()
@@ -36,6 +43,14 @@ def singleton_loop_helper(use_firestore):
     assert loop1.semaphore_released()
     assert loop2.granted_semaphore()
     loop1.db.delete_all_test_data()
+
+
+def get_test_loop_stuff():
+    def loop_fn():
+        print('yoyoyo')
+
+    name = 'test_loop_' + utils.generate_rand_alphanumeric(32)
+    return loop_fn, name
 
 
 def test_job_trigger():
@@ -51,7 +66,7 @@ def test_job_trigger():
     job_id = 'TEST_JOB_' + utils.generate_rand_alphanumeric(32)
 
     trigger_test_job(instances_db, job_id, jobs_db,
-                     callback=BOTLEAGUE_RESULTS_CALLBACK)
+                     callback=RESULTS_CALLBACK)
 
 
 def manually_trigger_job():
@@ -66,7 +81,7 @@ def trigger_test_job(instances_db, job_id, jobs_db, callback, docker_tag=None):
     eval_mgr = EvaluationManager(jobs_db=jobs_db, instances_db=instances_db)
     eval_mgr.check_for_finished_jobs()
     test_job = Box(results_callback=callback,
-                   status=JOB_STATUS_TO_START,
+                   status=JOB_STATUS_CREATED,
                    id=job_id,
                    eval_spec=Box(
                        docker_tag=docker_tag,
@@ -82,7 +97,7 @@ def trigger_test_job(instances_db, job_id, jobs_db, callback, docker_tag=None):
         new_jobs = eval_mgr.trigger_jobs()
         if new_jobs:
             # We don't actually start instances but we act like we did.
-            assert new_jobs[0].status == JOB_STATUS_TO_START or \
+            assert new_jobs[0].status == JOB_STATUS_CREATED or \
                    new_jobs[0].instance_id
 
             if 'instance_id' in new_jobs[0]:

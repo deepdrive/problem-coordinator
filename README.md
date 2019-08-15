@@ -27,4 +27,16 @@ that will fight for the semaphore when the machine boots for example. If you
 don't want to do that, and don't mind waiting for the VM to start, you can
 just stop and start the whole VM and the container will pull and start for you.
 
+# Loop handling
+
+If you get
+
+```
+singleton_loop:obtain_semaphore:78 - Waiting for other eval loop to end
+```
+
+the semaphore probably got into a bad state. You can set the 
+deepdrive_eval_loop_semphore to `stopped` [here](https://console.firebase.google.com/u/1/project/silken-impulse-217423/database/firestore/data~2Fdeepdrive_eval_loop_semaphore~2Fstatus)
+to get things started again.
+
 

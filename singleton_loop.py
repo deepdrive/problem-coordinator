@@ -52,8 +52,12 @@ class SingletonLoop:
                 self.release_semaphore()
                 return
             else:
-                self.fn()
-                time.sleep(1)
+                try:
+                    self.fn()
+                    time.sleep(1)
+                except Exception:
+                    self.kill_now = True
+                    log.exception('Exception in loop, killing')
 
     @log.catch
     def obtain_semaphore(self, timeout=None) -> bool:
@@ -154,6 +158,6 @@ class SingletonLoop:
         self.db.set(STATUS, STOPPED)
         log.info(f'Released semaphore for {self.id}')
 
-    def exit_gracefully(self, signum, frame):
+    def exit_gracefully(self, signum=None, frame=None):
         log.info(f'Exiting gracefully from {signum} {frame}')
         self.kill_now = True

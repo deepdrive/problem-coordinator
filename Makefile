@@ -23,7 +23,7 @@ reboot_vm:
 	$(SSH) --command "echo connection successful"
 	$(SSH) --command "sudo reboot" || echo "Success!! Error above is due to reboot. Check your VM logs."
 
-deploy: test push prepare reboot_vm
+deploy: build test push prepare reboot_vm
 
 run:
 	docker run -it --net=host $(TAG)

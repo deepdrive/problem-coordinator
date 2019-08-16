@@ -105,12 +105,12 @@ class EvaluationManager:
 
     def check_jobs_in_progress(self):
         for job in self.jobs_db.where('status', '==', JOB_STATUS_RUNNING):
-            if not Box(job, default_box=True).problem_def.max_seconds:
+            max_seconds = Box(job, default_box=True).eval_spec.max_seconds
+            if not max_seconds:
                 log.warning('No max_seconds in problem definition, defaulting'
                             ' to 5 minutes')
                 max_seconds = 60 * 5
-            else:
-                max_seconds = job.problem_def.max_seconds
+
             if time.time() - job.started_at.timestamp() > max_seconds:
                 log.error(f'Job {job} took longer than {max_seconds}, '
                           f'should stop instance: {job.instance_id}!')

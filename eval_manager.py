@@ -14,7 +14,8 @@ from problem_constants.constants import INSTANCE_STATUS_AVAILABLE, \
     INSTANCE_STATUS_USED, JOB_STATUS_CREATED, GCP_ZONE, GCP_PROJECT, \
     INSTANCE_EVAL_LABEL, SUPPORTED_PROBLEMS, ROOT, INSTANCE_CONFIG_PATH, \
     INSTANCE_NAME_PREFIX, MAX_EVAL_INSTANCES, JOB_STATUS_RUNNING, \
-    JOB_STATUS_FINISHED, JOB_STATUS_ASSIGNED, JOB_STATUS_TIMED_OUT
+    JOB_STATUS_FINISHED, JOB_STATUS_ASSIGNED, JOB_STATUS_TIMED_OUT, \
+    BOTLEAGUE_LIAISON_HOST
 from common import get_jobs_db, get_instances_db
 from logs import log
 
@@ -168,6 +169,7 @@ class EvaluationManager:
         self.gce_ops_in_progress = ops_still_in_progress
 
     def trigger_eval(self, job) -> Box:
+        self.confirm_evaluation(job)
         problem = job.eval_spec.problem
 
         # Verify that the specified problem is supported
@@ -216,6 +218,14 @@ class EvaluationManager:
         # TODO: Set DEEPDRIVE_SIM_HOST
         # TODO: Set network tags between bot and problem container for port 5557
         return job
+
+    @staticmethod
+    def confirm_evaluation(job):
+        confirmation = requests.post(
+            f'{BOTLEAGUE_LIAISON_HOST}/confirm',
+            json={'eval_key': job.eval_spec.eval_key},)
+        if not confirmation.ok:
+            raise RuntimeError('Could not confirm eval with Botleague')
 
     def start_instance(self, inst):
         return self.gce.instances().start(

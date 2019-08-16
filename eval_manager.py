@@ -73,7 +73,7 @@ class EvaluationManager:
 
     def loop(self):
         now = time.time()
-        self.last_cronitor_ping_time = ping_cronitor_every_minute(
+        self.last_cronitor_ping_time = ping_cronitor(
             now, self.last_cronitor_ping_time, 'run')
 
         self.trigger_jobs()
@@ -84,7 +84,7 @@ class EvaluationManager:
         #  problem timeout
         # TODO: self.delete_idle_instances_over_threshold()
 
-        self.last_cronitor_ping_time = ping_cronitor_every_minute(
+        self.last_cronitor_ping_time = ping_cronitor(
             now, self.last_cronitor_ping_time, 'complete')
 
     def trigger_jobs(self) -> BoxList:
@@ -294,16 +294,14 @@ class EvaluationManager:
         return instance_name
 
 
-def ping_cronitor_every_minute(now, last_ping_time, state='complete') -> int:
+def ping_cronitor(now, last_ping_time, state='run') -> int:
     if blconfig.is_test:
         ret = last_ping_time
-    elif last_ping_time == -1 or now - last_ping_time > 60:
-        log.debug(f'Pinging cronitor with {state}')
+    else:
+        log.trace(f'Pinging cronitor with {state}')
         # Ping cronitor every minute
         requests.get('https://cronitor.link/MJ8I4x/%s' % state, timeout=10)
         ret = now
-    else:
-        ret = last_ping_time
     return ret
 
 

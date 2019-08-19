@@ -112,7 +112,7 @@ class EvaluationManager:
                 max_seconds = 60 * 5
 
             if time.time() - job.started_at.timestamp() > max_seconds:
-                log.error(f'Job {job} took longer than {max_seconds}, '
+                log.error(f'Job {job} took longer than {max_seconds} seconds, '
                           f'should stop instance: {job.instance_id}!')
                 job.status = JOB_STATUS_TIMED_OUT
                 self.jobs_db.set(job.id, job)

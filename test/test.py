@@ -7,7 +7,7 @@ import utils
 from problem_constants.constants import JOB_STATUS_CREATED, \
     INSTANCE_STATUS_USED, RESULTS_CALLBACK
 from eval_manager import EvaluationManager
-from singleton_loop import SingletonLoop, STATUS, REQUESTED, RUNNING
+from singleton_loop import SingletonLoop, STATUS, REQUESTED, RUNNING, STOPPED
 from logs import log
 
 
@@ -17,6 +17,17 @@ def test_singleton_loop_local():
 
 def test_singleton_loop_firestore():
     singleton_loop_helper(use_firestore=True)
+
+
+def test_singleton_loop_exception():
+    _, name = get_test_loop_stuff()
+
+    def loop_fn():
+        raise RuntimeError('Should be caught')
+    loop = SingletonLoop(name, loop_fn, force_firestore_db=False)
+    loop.db.set(STATUS, STOPPED)
+    loop.run()
+    assert loop.caught_exception
 
 
 def test_singleton_loop_orphaned_runner():

@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 import signal
 import time
@@ -7,7 +8,7 @@ from typing import Union
 
 import loguru
 import requests
-from botleague_helpers.config import blconfig
+from botleague_helpers.config import blconfig, in_test
 from botleague_helpers.db import get_db
 from box import Box
 
@@ -33,6 +34,7 @@ class SingletonLoop:
         self.db = get_db(loop_name + '_semaphore', use_boxes=True,
                          force_firestore_db=force_firestore_db)
         self.kill_now = False
+        self.caught_exception = False
         self.id = datetime.now().strftime(
             f'%Y-%m-%d__%I-%M-%S%p#'
             f'{utils.generate_rand_alphanumeric(3)}')
@@ -44,7 +46,7 @@ class SingletonLoop:
         if not self.obtain_semaphore():
             log.error('Could not obtain semaphore! Check to see if other loop '
                       'is running!')
-            time.sleep(1)  # We'll be in a reboot loop until shutdown
+            self.sleep_one_second()  # We'll be in a reboot loop until shutdown
             return
         log.success(f'Running {self.loop_name}, loop_id: {self.id}')
         while not self.semaphore_released():
@@ -54,10 +56,16 @@ class SingletonLoop:
             else:
                 try:
                     self.fn()
-                    time.sleep(1)
+                    self.sleep_one_second()
                 except Exception:
                     self.kill_now = True
+                    self.caught_exception = True
                     log.exception('Exception in loop, killing')
+        if self.caught_exception and not in_test():
+            sys.exit(100)  # http://tldp.org/LDP/abs/html/exitcodes.html
+
+    def sleep_one_second(self):
+        time.sleep(1) if not in_test() else None
 
     @log.catch
     def obtain_semaphore(self, timeout=None) -> bool:

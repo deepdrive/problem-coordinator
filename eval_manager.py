@@ -4,7 +4,7 @@ import googleapiclient.discovery
 import os
 
 import requests
-from botleague_helpers.config import blconfig
+from botleague_helpers.config import blconfig, in_test
 from box import Box, BoxList
 from botleague_helpers.db import DB
 from google.cloud.firestore_v1 import SERVER_TIMESTAMP
@@ -221,6 +221,8 @@ class EvaluationManager:
 
     @staticmethod
     def confirm_evaluation(job):
+        if in_test():
+            return
         confirmation = requests.post(
             f'{BOTLEAGUE_LIAISON_HOST}/confirm',
             json={'eval_key': job.eval_spec.eval_key},)

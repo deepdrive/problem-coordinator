@@ -90,8 +90,20 @@ class EvaluationManager:
     def trigger_jobs(self) -> BoxList:
         new_jobs = BoxList()
         for job in self.jobs_db.where('status', '==', JOB_STATUS_CREATED):
-            job = self.trigger_eval(job)
-            new_jobs.append(job)
+            try:
+                log.info(f'Triggering job {job.to_json(indent=2)}')
+                job = self.trigger_eval(job)
+            except:
+                # Could have been a network failure, so just try again.
+                # More granular exceptions should be handled before this
+                # which can set the job to not run again
+                # if that's what's called for.
+
+                log.exception(f'Exception triggering eval for job {job}, '
+                              f'will try again shortly.')
+
+            if job:
+                new_jobs.append(job)
 
             #  Create instance
             #  Start instance

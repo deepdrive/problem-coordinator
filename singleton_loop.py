@@ -88,7 +88,7 @@ class SingletonLoop:
         sys.exit(status)
 
     def sleep_one_second(self):
-        time.sleep(1) if not in_test() else None
+        time.sleep(1) if not (in_test() or self.kill_now) else None
 
     @log.catch
     def obtain_semaphore(self, timeout=None) -> bool:

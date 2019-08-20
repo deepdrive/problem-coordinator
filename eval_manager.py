@@ -174,7 +174,10 @@ class EvaluationManager:
 
         # Verify that the specified problem is supported
         if problem not in SUPPORTED_PROBLEMS:
-            raise RuntimeError('unsupported problem "{}"'.format(problem))
+            log.error(f'Unsupported problem "{problem}"')
+            job.status = JOB_STATUS_DENIED_CONFIRMATION
+            self.save_job(job)
+            return
 
         eval_instances = self.list_instances(INSTANCE_EVAL_LABEL)
 

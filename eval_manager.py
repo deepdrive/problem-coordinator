@@ -1,4 +1,5 @@
 import time
+from typing import Optional
 
 import googleapiclient.discovery
 import os
@@ -180,8 +181,9 @@ class EvaluationManager:
                 ops_still_in_progress.append(op)
         self.gce_ops_in_progress = ops_still_in_progress
 
-    def trigger_eval(self, job) -> Box:
-        self.confirm_evaluation(job)
+    def trigger_eval(self, job) -> Optional[Box]:
+        if not self.confirm_evaluation(job):
+            return
         problem = job.eval_spec.problem
 
         # Verify that the specified problem is supported

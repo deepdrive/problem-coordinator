@@ -1,5 +1,10 @@
 import sys
 
+import os
+
+ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.insert(0, ROOT)
+
 from botleague_helpers.db import get_db
 from box import Box
 from problem_constants import constants

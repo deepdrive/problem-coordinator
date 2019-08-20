@@ -219,15 +219,31 @@ class EvaluationManager:
         # TODO: Set network tags between bot and problem container for port 5557
         return job
 
-    @staticmethod
-    def confirm_evaluation(job):
+    def confirm_evaluation(self, job) -> bool:
         if in_test():
-            return
-        confirmation = requests.post(
-            f'{BOTLEAGUE_LIAISON_HOST}/confirm',
-            json={'eval_key': job.eval_spec.eval_key},)
-        if not confirmation.ok:
-            raise RuntimeError('Could not confirm eval with Botleague')
+            status = JOB_STATUS_CONFIRMED
+            ret = True
+        else:
+            url = f'{job.botleague_liaison_host}/confirm'
+            json = {'eval_key': job.eval_spec.eval_key}
+            log.info(f'Confirming eval {json} at {url}...')
+            confirmation = requests.post(url, json=json)
+            if 400 <= confirmation.status_code < 500:
+                status = JOB_STATUS_DENIED_CONFIRMATION
+                log.error('Botleague denied confirmation of job, skipping')
+                ret = False
+            elif not confirmation.ok:
+                status = JOB_STATUS_CREATED
+                log.error('Unable to confirm job with botleague liaison, '
+                          'will try again shortly')
+                ret = False
+            else:
+                status = JOB_STATUS_CONFIRMED
+                log.success(f'Confirmed eval {json} at {url}')
+                ret = True
+        job.status = status
+        self.save_job(job)
+        return ret
 
     def start_instance(self, inst):
         return self.gce.instances().start(

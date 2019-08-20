@@ -77,22 +77,22 @@ def test_job_trigger():
 
     job_id = 'TEST_JOB_' + utils.generate_rand_alphanumeric(32)
 
-    trigger_test_job(instances_db, job_id, jobs_db,
-                     callback=RESULTS_CALLBACK)
+    trigger_job(instances_db, job_id, jobs_db,
+                botleague_liaison_host=constants.BOTLEAGUE_LIAISON_HOST)
 
 
 def manually_trigger_job():
     job_id = 'TEST_JOB_' + utils.generate_rand_alphanumeric(32)
-    trigger_test_job(instances_db=None, job_id=job_id, jobs_db=None,
-                     callback='https://a3d66072.ngrok.io/results',
-                     docker_tag='deepdriveio/deepdrive:bot_domain_randomization')
+    trigger_job(instances_db=None, job_id=job_id, jobs_db=None,
+                botleague_liaison_host='https://a3d66072.ngrok.io',
+                docker_tag='deepdriveio/deepdrive:bot_domain_randomization')
 
 
-def trigger_test_job(instances_db, job_id, jobs_db, callback, docker_tag=None):
+def trigger_job(instances_db, job_id, jobs_db, botleague_liaison_host, docker_tag=None):
     docker_tag = docker_tag or 'deepdriveio/problem-worker-test'
     eval_mgr = EvaluationManager(jobs_db=jobs_db, instances_db=instances_db)
     eval_mgr.check_for_finished_jobs()
-    test_job = Box(results_callback=callback,
+    test_job = Box(botleague_liaison_host=botleague_liaison_host,
                    status=JOB_STATUS_CREATED,
                    id=job_id,
                    eval_spec=Box(

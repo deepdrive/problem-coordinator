@@ -62,6 +62,7 @@ class SingletonLoop:
                     self.caught_exception = True
                     log.exception('Exception in loop, killing')
         if self.caught_exception and not in_test():
+            log.error('Exiting with 100 status due to caught exception')
             sys.exit(100)  # http://tldp.org/LDP/abs/html/exitcodes.html
 
     def sleep_one_second(self):

@@ -13,7 +13,7 @@ POST https://www.googleapis.com/compute/v1/projects/silken-impulse-217423/zones/
     "items": [
       {
         "key": "gce-container-declaration",
-        "value": "spec:\n  containers:\n    - name: leaderboard-generator-2\n      image: gcr.io/silken-impulse-217423/leaderboard-generator\n      stdin: true\n      tty: true\n  restartPolicy: OnFailure\n\n# This container declaration format is not public API and may change without notice. Please\n# use gcloud command-line tool or Google Cloud Console to run Containers on Google Compute Engine."
+        "value": "spec:\n  containers:\n    - name: leaderboard-generator-2\n      image: gcr.io/silken-impulse-217423/leaderboard-generator\n      stdin: true\n      tty: true\n  restartPolicy: Always\n\n# This container declaration format is not public API and may change without notice. Please\n# use gcloud command-line tool or Google Cloud Console to run Containers on Google Compute Engine."
       },
       {
         "key": "google-logging-enabled",

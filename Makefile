@@ -21,7 +21,7 @@ prepare:
 
 reboot_vm:
 	$(SSH) --command "echo connection successful"
-	$(SSH) --command "sudo reboot" || echo "\e[1;30;48;5;82m SUCCESS \e[0m Error above is due to reboot. Check your VM logs."
+	$(SSH) --command "sudo reboot" || echo "\e[1;30;48;5;82m SUCCESS \e[0m Error above is due to reboot. You'll be able to run 'make ssh' again in a few seconds."
 
 deploy: build test push prepare reboot_vm
 

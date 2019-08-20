@@ -230,7 +230,7 @@ class EvaluationManager:
 
     def confirm_evaluation(self, job) -> bool:
         if in_test():
-            status = JOB_STATUS_CONFIRMED
+            status = JOB_STATUS_CREATED
             ret = True
         else:
             url = f'{job.botleague_liaison_host}/confirm'
@@ -247,7 +247,7 @@ class EvaluationManager:
                           'will try again shortly')
                 ret = False
             else:
-                status = JOB_STATUS_CONFIRMED
+                status = JOB_STATUS_CREATED
                 log.success(f'Confirmed eval {json} at {url}')
                 ret = True
         job.status = status

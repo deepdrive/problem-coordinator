@@ -151,7 +151,7 @@ class SingletonLoop:
         if found_orphan:
             # TODO: Create an alert from this log
             log.warning(f'Found orphaned {self.id} after requesting! '
-                        f'Did a race condition occur?')
+                        f'Did you stop manually?')
         ret = granted or found_orphan
         return ret
 

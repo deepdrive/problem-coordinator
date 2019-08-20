@@ -39,8 +39,10 @@ class SingletonLoop:
             f'%Y-%m-%d__%I-%M-%S%p#'
             f'{utils.generate_rand_alphanumeric(3)}')
         self.previous_status = None
-        signal.signal(signal.SIGINT, self.exit_gracefully)
-        signal.signal(signal.SIGTERM, self.exit_gracefully)
+        self.caught_sigterm = False
+        self.caught_sigint = False
+        signal.signal(signal.SIGINT, self.handle_sigint)
+        signal.signal(signal.SIGTERM, self.handle_sigterm)
 
     def run(self):
         if not self.obtain_semaphore():
@@ -167,6 +169,13 @@ class SingletonLoop:
         self.db.set(STATUS, STOPPED)
         log.info(f'Released semaphore for {self.id}')
 
-    def exit_gracefully(self, signum=None, frame=None):
-        log.info(f'Exiting gracefully from {signum} {frame}')
+    def handle_sigint(self, signum=None, frame=None):
+        log.warning(f'Sigint caught {signum} {frame}')
         self.kill_now = True
+        self.caught_sigint = True
+
+    def handle_sigterm(self, signum=None, frame=None):
+        log.error(f'Sigterm caught {signum} {frame}')
+        self.kill_now = True
+        self.caught_sigterm = True
+

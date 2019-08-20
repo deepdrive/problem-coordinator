@@ -7,8 +7,10 @@ Botleague implementation.
 # Deployment
 
 This app is designed to run on one GCP machine and GCP's docker support.
-Set the container restart policy to "On failure" so that the container restarts
-if there's an error, but does not restart when you manually stop it.
+Set the container restart policy to "Always" so that the container restarts
+even if there's an error. This means that if you want to stop the service,
+you should stop the VM, as just stopping the container can sometimes
+result in an unexpected restart in my experience.
 
 > The config for the problem-coordinator is [here](cloud_configs/create-problem-coordinator.http). 
 

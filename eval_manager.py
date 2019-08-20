@@ -140,7 +140,8 @@ class EvaluationManager:
                     log.success(f'Made instance {job.instance_id} available')
 
                 # self.gce.instances()
-                # TODO: Stop the instance
+                # TODO: Stop the instance in case there's an issue with the
+                #  instance itself
                 # TODO: Set job error timeout
                 pass
 

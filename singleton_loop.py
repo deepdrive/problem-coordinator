@@ -53,7 +53,7 @@ class SingletonLoop:
         log.success(f'Running {self.loop_name}, loop_id: {self.id}')
         while not self.semaphore_released():
             if self.kill_now:
-                self.release_semaphore()
+                self.exit()
                 return
             else:
                 try:
@@ -63,9 +63,29 @@ class SingletonLoop:
                     self.kill_now = True
                     self.caught_exception = True
                     log.exception('Exception in loop, killing')
-        if self.caught_exception and not in_test():
-            log.error('Exiting with 100 status due to caught exception')
-            sys.exit(100)  # http://tldp.org/LDP/abs/html/exitcodes.html
+
+    def exit(self):
+        self.release_semaphore()
+        if in_test():
+            log.info('Exiting loop in test')
+            status = 0
+        elif self.caught_exception:
+            log.error('Exiting due to caught exception')
+            status = 100
+        elif self.caught_sigint:
+            log.warning('Exiting due to caught sigint')
+            status = 101
+        elif self.caught_sigterm:
+            log.warning('Exiting due to caught sigterm')
+            status = 102
+        else:
+            log.error('Unexpected reason for exit')
+            status = 1
+
+        log.warning(f'Exiting with status {status}')
+
+        # http://tldp.org/LDP/abs/html/exitcodes.html
+        sys.exit(status)
 
     def sleep_one_second(self):
         time.sleep(1) if not in_test() else None

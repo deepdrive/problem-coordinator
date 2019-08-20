@@ -2,10 +2,11 @@ import sys
 
 from botleague_helpers.db import get_db
 from box import Box
+from problem_constants import constants
 
 import utils
 from problem_constants.constants import JOB_STATUS_CREATED, \
-    INSTANCE_STATUS_USED, RESULTS_CALLBACK
+    INSTANCE_STATUS_USED
 from eval_manager import EvaluationManager
 from singleton_loop import SingletonLoop, STATUS, REQUESTED, RUNNING, STOPPED
 from logs import log

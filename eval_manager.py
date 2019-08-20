@@ -38,18 +38,6 @@ from logs import log
 #   Stop instances after results sent with idle_timeout.
 #   Delete/Kill instances if over threshold of max instances. Meaure start/create over a week, maybe we can just create.
 
-"""
-# The number of queries are limited to a maximum of 10 queries per minute per VM instance.
-# Queries do not exceed a burst of 3 queries per second. If this maximum rate is exceeded,
- Compute Engine might arbitrarily remove guest attributes that are in the process of being written.
- This data removal is needed to ensure that other critical system data can be written to the server.
-"""
-
-# gcloud compute instances add-metadata INSTANCE \
-#   --metadata bread=mayo,cheese=cheddar,lettuce=romaine
-# gcloud compute instances add-metadata [INSTANCE_NAME] --metadata enable-guest-attributes=TRUE
-#
-
 
 class EvaluationManager:
     """
@@ -106,8 +94,6 @@ class EvaluationManager:
             if job:
                 new_jobs.append(job)
 
-            #  Create instance
-            #  Start instance
             # TODO: Check for failed / crashed instance once per minute
             # TODO: Stop instances if they have been idle for longer than timeout
             # TODO: Cap total instances

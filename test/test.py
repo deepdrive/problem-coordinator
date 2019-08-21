@@ -136,11 +136,15 @@ def trigger_job(instances_db, job_id, jobs_db, botleague_liaison_host, docker_ta
 
 
 def run_all(current_module):
-    print('running all tests')
+    log.info('Running all tests')
+    num = 0
     for attr in dir(current_module):
         if attr.startswith('test_'):
-            print('running ' + attr)
+            num += 1
+            log.info('Running ' + attr)
             getattr(current_module, attr)()
+            log.success(f'Test: {attr} ran successfully')
+    return num
 
 
 def main():
@@ -148,8 +152,10 @@ def main():
     if len(sys.argv) > 1:
         test_case = sys.argv[1]
         getattr(current_module, test_case)()
+        num = 1
     else:
-        run_all(current_module)
+        num = run_all(current_module)
+    log.success(f'{num} tests run successfully!')
 
 
 if __name__ == '__main__':

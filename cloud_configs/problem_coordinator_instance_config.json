@@ -1,6 +1,6 @@
 {
   "canIpForward": false,
-  "cpuPlatform": "Intel Broadwell",
+  "cpuPlatform": "Unknown CPU Platform",
   "creationTimestamp": "2019-08-15T09:29:22.693-07:00",
   "deletionProtection": false,
   "description": "",
@@ -37,7 +37,7 @@
   },
   "machineType": "projects/silken-impulse-217423/zones/us-west1-b/machineTypes/custom-2-4096",
   "metadata": {
-    "fingerprint": "esC8SvyHnqQ=",
+    "fingerprint": "QQaihKD-vUg=",
     "items": [
       {
         "key": "google-logging-enabled",
@@ -45,11 +45,11 @@
       },
       {
         "key": "startup-script",
-        "value": "#! /bin/bash\ndocker pull gcr.io/silken-impulse-217423/deepdrive-problem-coordinator\ntouch /tmp/gce-startup-notification"
+        "value": "#! /bin/bash\ndocker pull gcr.io/silken-impulse-217423/deepdrive-problem-coordinator\ntouch /var/log/notify/gce-startup-notification"
       },
       {
         "key": "shutdown-script",
-        "value": "#! /bin/bash\ntouch /tmp/gce-shutdown-notification"
+        "value": "#! /bin/bash\ntouch /var/log/notify/gce-shutdown-notification\ndocker stop gcr.io/silken-impulse-217423/deepdrive-problem-coordinator"
       },
       {
         "key": "gce-container-declaration",
@@ -65,12 +65,11 @@
         {
           "kind": "compute#accessConfig",
           "name": "External NAT",
-          "natIP": "34.83.231.103",
           "networkTier": "PREMIUM",
           "type": "ONE_TO_ONE_NAT"
         }
       ],
-      "fingerprint": "vNTT8dIYyE8=",
+      "fingerprint": "bDppIdz5jTc=",
       "kind": "compute#networkInterface",
       "name": "nic0",
       "network": "projects/silken-impulse-217423/global/networks/default",
@@ -96,7 +95,7 @@
     }
   ],
   "startRestricted": false,
-  "status": "RUNNING",
+  "status": "TERMINATED",
   "tags": {
     "fingerprint": "nNZ0SA7CJyk=",
     "items": [

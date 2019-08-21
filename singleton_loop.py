@@ -45,6 +45,15 @@ class SingletonLoop:
         signal.signal(signal.SIGTERM, self.handle_sigterm)
 
     def run(self):
+        # # Check if /tmp/gce-shutdown-notification is newer than and don't
+        # # lock if so as we were stopped via the shutdown scrip
+        # startup_file = '/var/log/notify/gce-startup-notification'
+        # shutdown_file = '/var/log/notify/gce-startup-notification'
+        # if os.path.exists(shutdown_file) and os.path.exists(shutdown_file):
+        #     start_time = utils.modification_date(startup_file)
+        #     shutdown_time = utils.modification_date(shutdown_file)
+        #     if shutdown_time > start_time:
+
         if not self.obtain_semaphore():
             log.error('Could not obtain semaphore! Check to see if other loop '
                       'is running!')

@@ -91,19 +91,3 @@ def pip_install(*args):
             # Attempting to import said module will hopefully keep this from being hard to track root cause for.
             # TODO: Be more specific about exceptions we swallow.
             print('Error installing %s - error was: %s' % (args, str(e)))
-
-
-def pip_install2(package, req_path=None):
-    if hasattr(pip, 'main'):
-        pip_main = pip.main
-    else:
-        from pip._internal import main as pip_main
-
-    args = ['install']
-    if req_path is not None:
-        args += ['--target', req_path]
-        # Ubuntu bug workaround - https://github.com/pypa/pip/issues/3826#issuecomment-427622702
-        args.append('--system')
-
-    args.append(package)
-    pip_main(args)

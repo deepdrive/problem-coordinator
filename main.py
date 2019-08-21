@@ -1,4 +1,3 @@
-# import boot  # Must be first
 from problem_constants import constants
 from eval_manager import EvaluationManager
 from singleton_loop import SingletonLoop

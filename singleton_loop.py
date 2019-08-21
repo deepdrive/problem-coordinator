@@ -76,8 +76,8 @@ class SingletonLoop:
     def exit(self):
         self.release_semaphore()
         if in_test():
-            log.info('Exiting loop in test')
-            status = 0
+            log.info('Not exiting in test')
+            return
         elif self.caught_exception:
             log.error('Exiting due to caught exception')
             status = 100

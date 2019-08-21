@@ -11,5 +11,3 @@ cd ${DIR}/..
 
 # Always get the latest for our shared libs
 pip install --upgrade --force-reinstall --ignore-installed git+git://github.com/deepdrive/problem-constants#egg=problem-constants
-
-python -u main.py

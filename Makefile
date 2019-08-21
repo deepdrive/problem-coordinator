@@ -12,6 +12,9 @@ push:
 #test: build
 #	docker run -it $(TAG) bin/test.sh
 
+RUN_ARGS=-v ~/.gcpcreds/:/root/.gcpcreds --init
+RUN_ARGS_DEV=$(RUN_ARGS) --net=host -e GOOGLE_APPLICATION_CREDENTIALS=/root/.gcpcreds/VoyageProject-d33af8724280.json
+
 ssh:
 	$(SSH)
 
@@ -28,8 +31,15 @@ deploy: build local_test push prepare reboot_vm
 local_test:
 	python test/test.py
 
+test:
+	docker run $(RUN_ARGS_DEV) -it $(TAG) python test/test.py
+
+# GCE runs the container via args configured in the instance, not here!
 run:
-	docker run -it --net=host $(TAG)
+	docker run $(RUN_ARGS) --restart=unless-stopped --detach -e LOGURU_LEVEL=INFO $(TAG)
+
+devrun:
+	docker run $(RUN_ARGS_DEV) -it $(TAG)
 
 bash:
 	docker run -it $(TAG) bash

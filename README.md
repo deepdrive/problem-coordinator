@@ -34,7 +34,7 @@ just stop and start the whole VM and the container will pull and start for you.
 If you get
 
 ```
-singleton_loop:obtain_semaphore:78 - Waiting for other eval loop to end
+singleton_loop:obtain_semaphore:78 - Waiting for other loop to end
 ```
 
 the semaphore probably got into a bad state. You can set the 

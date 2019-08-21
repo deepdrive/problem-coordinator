@@ -115,7 +115,7 @@ class SingletonLoop:
         # TODO: Check for a third loop that requested access and alert, die,
         #  or re-request. As-is we just zombie.
         while not self.granted_semaphore():
-            log.info('Waiting for other eval loop to end')
+            log.info('Waiting for other loop to end')
             if self.kill_now:
                 log.warning('Killing loop while requesting semaphore, '
                             'here be dragons!')

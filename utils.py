@@ -1,12 +1,10 @@
 import json
 import os
 import os.path as p
+from datetime import datetime
+import pip
 
 from box import Box
-
-import logging as log
-
-log.basicConfig(level=log.INFO)
 
 
 def get_str_or_box(content_str, filename):
@@ -68,3 +66,44 @@ def generate_rand_alphanumeric(num_chars):
     alphabet = string.ascii_lowercase + string.digits
     ret = ''.join(choice(alphabet) for _ in range(num_chars))
     return ret
+
+
+def modification_date(filename):
+    t = os.path.getmtime(filename)
+    return datetime.fromtimestamp(t)
+
+
+def pip_install(*args):
+    if hasattr(pip, 'main'):
+        pip_main = pip.main
+    else:
+        from pip._internal import main as pip_main
+
+    args = ['install', '-vvv'] + list(args)
+    try:
+        pip_main(args)
+    except Exception as e:
+        try:
+            # If at first you don't succeed!!!
+            pip_main(args)
+        except Exception as e:
+            # Swallow exceptions here to ignore pip-req-tracker tmp deletion errors.
+            # Attempting to import said module will hopefully keep this from being hard to track root cause for.
+            # TODO: Be more specific about exceptions we swallow.
+            print('Error installing %s - error was: %s' % (args, str(e)))
+
+
+def pip_install2(package, req_path=None):
+    if hasattr(pip, 'main'):
+        pip_main = pip.main
+    else:
+        from pip._internal import main as pip_main
+
+    args = ['install']
+    if req_path is not None:
+        args += ['--target', req_path]
+        # Ubuntu bug workaround - https://github.com/pypa/pip/issues/3826#issuecomment-427622702
+        args.append('--system')
+
+    args.append(package)
+    pip_main(args)

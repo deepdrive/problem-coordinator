@@ -4,8 +4,8 @@ from problem_constants import constants
 
 
 def get_jobs_db():
-    return get_db(constants.EVAL_JOBS_COLLECTION_NAME, use_boxes=True)
+    return get_db(constants.JOBS_COLLECTION_NAME)
 
 
-def get_instances_db():
-    return get_db(constants.EVAL_INSTANCES_COLLECTION_NAME, use_boxes=True)
+def get_worker_instances():
+    return get_db(constants.WORKER_INSTANCES_COLLECTION_NAME)

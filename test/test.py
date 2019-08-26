@@ -12,7 +12,7 @@ from problem_constants import constants
 import utils
 from problem_constants.constants import JOB_STATUS_CREATED, \
     INSTANCE_STATUS_USED
-from eval_manager import EvaluationManager
+from job_manager import JobManager
 from singleton_loop import SingletonLoop, STATUS, REQUESTED, RUNNING, STOPPED
 from logs import log
 
@@ -95,7 +95,7 @@ def manually_trigger_job():
 
 def trigger_job(instances_db, job_id, jobs_db, botleague_liaison_host, docker_tag=None):
     docker_tag = docker_tag or 'deepdriveio/problem-worker-test'
-    eval_mgr = EvaluationManager(jobs_db=jobs_db, instances_db=instances_db)
+    eval_mgr = JobManager(jobs_db=jobs_db, instances_db=instances_db)
     eval_mgr.check_for_finished_jobs()
     test_job = Box(botleague_liaison_host=botleague_liaison_host,
                    status=JOB_STATUS_CREATED,
@@ -111,7 +111,7 @@ def trigger_job(instances_db, job_id, jobs_db, botleague_liaison_host, docker_ta
 
     try:
         eval_mgr.jobs_db.set(job_id, test_job)
-        new_jobs = eval_mgr.trigger_jobs()
+        new_jobs = eval_mgr.assign_jobs()
         if new_jobs:
             # We don't actually start instances but we act like we did.
             assert new_jobs[0].status == JOB_STATUS_CREATED or \
@@ -155,7 +155,7 @@ def main():
         num = 1
     else:
         num = run_all(current_module)
-    log.success(f'{num} tests run successfully!')
+    log.success(f'{num} tests ran successfully!')
 
 
 if __name__ == '__main__':

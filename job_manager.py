@@ -13,12 +13,15 @@ from problem_constants import constants
 
 from problem_constants.constants import INSTANCE_STATUS_AVAILABLE, \
     INSTANCE_STATUS_USED, JOB_STATUS_CREATED, GCP_ZONE, GCP_PROJECT, \
-    INSTANCE_EVAL_LABEL, SUPPORTED_PROBLEMS, ROOT, INSTANCE_CONFIG_PATH, \
-    INSTANCE_NAME_PREFIX, MAX_EVAL_INSTANCES, JOB_STATUS_RUNNING, \
+    WORKER_INSTANCE_LABEL, SUPPORTED_PROBLEMS, INSTANCE_CONFIG_PATH, \
+    INSTANCE_NAME_PREFIX, MAX_WORKER_INSTANCES, JOB_STATUS_RUNNING, \
     JOB_STATUS_FINISHED, JOB_STATUS_ASSIGNED, JOB_STATUS_TIMED_OUT, \
-    JOB_STATUS_DENIED_CONFIRMATION, JOB_STATUS_CONFIRMED
-from common import get_jobs_db, get_instances_db
+    JOB_STATUS_DENIED_CONFIRMATION, JOB_TYPE_EVAL, JOB_TYPE_SIM_BUILD
+from common import get_jobs_db, get_worker_instances
 from logs import log
+from utils import dbox
+
+ROOT = os.path.dirname(os.path.realpath(__file__))
 
 # TODO:
 #   [x] We get a call from BL with the eval_id
@@ -39,7 +42,7 @@ from logs import log
 #   Delete/Kill instances if over threshold of max instances. Meaure start/create over a week, maybe we can just create.
 
 
-class EvaluationManager:
+class JobManager:
     """
     The evaluation endpoint implementation for the Deepdrive Problem Endpoint.
 
@@ -53,19 +56,14 @@ class EvaluationManager:
 
     def __init__(self, jobs_db=None, instances_db=None):
         self.gce_ops_in_progress = BoxList()
-        self.instances_db = instances_db or get_instances_db()
+        self.instances_db = instances_db or get_worker_instances()
         self.jobs_db: DB = jobs_db or get_jobs_db()
         self.gce = googleapiclient.discovery.build('compute', 'v1')
         self.project: str = GCP_PROJECT
         self.zone: str = GCP_ZONE
-        self.last_cronitor_ping_time = -1
 
-    def loop(self):
-        now = time.time()
-        self.last_cronitor_ping_time = ping_cronitor(
-            now, self.last_cronitor_ping_time, 'run')
-
-        self.trigger_jobs()
+    def run(self):
+        self.assign_jobs()
         self.check_gce_ops_in_progress()
         self.check_jobs_in_progress()
         # TODO: self.stop_idle_instances()
@@ -73,15 +71,14 @@ class EvaluationManager:
         #  problem timeout
         # TODO: self.delete_idle_instances_over_threshold()
 
-        self.last_cronitor_ping_time = ping_cronitor(
-            now, self.last_cronitor_ping_time, 'complete')
-
-    def trigger_jobs(self) -> BoxList:
+    def assign_jobs(self) -> BoxList:
         new_jobs = BoxList()
         for job in self.jobs_db.where('status', '==', JOB_STATUS_CREATED):
             try:
-                log.info(f'Triggering job {job.to_json(indent=2)}')
-                job = self.trigger_eval(job)
+                log.info(f'Assigning job {job.to_json(indent=2, default=str)}')
+                if self.should_start_job(job):
+                    self.assign_job(job)
+                    new_jobs.append(job)
             except:
                 # Could have been a network failure, so just try again.
                 # More granular exceptions should be handled before this
@@ -91,45 +88,51 @@ class EvaluationManager:
                 log.exception(f'Exception triggering eval for job {job}, '
                               f'will try again shortly.')
 
-            if job:
-                new_jobs.append(job)
-
-            # TODO: Check for failed / crashed instance once per minute
-            # TODO: Stop instances if they have been idle for longer than timeout
-            # TODO: Cap total instances
-            # TODO: Cap instances per bot owner, using first part of docker tag
-            # TODO: Delete instances over threshold of stopped+started
+        # TODO: Check for failed / crashed instance once per minute
+        # TODO: Stop instances if they have been idle for longer than timeout
+        # TODO: Cap total instances
+        # TODO: Cap instances per bot owner, using first part of docker tag
+        # TODO: Delete instances over threshold of stopped+started
 
         return new_jobs
 
     def check_jobs_in_progress(self):
         for job in self.jobs_db.where('status', '==', JOB_STATUS_RUNNING):
-            max_seconds = Box(job, default_box=True).eval_spec.max_seconds
-            if not max_seconds:
-                log.warning('No max_seconds in problem definition, defaulting'
-                            ' to 5 minutes')
+            self.handle_timed_out_jobs(job)
+
+    def handle_timed_out_jobs(self, job):
+        max_seconds = Box(job, default_box=True).eval_spec.max_seconds
+        if not max_seconds:
+            log.warning('No max_seconds in problem definition, defaulting'
+                        ' to 5 minutes')
+            if job.job_type == JOB_TYPE_EVAL:
                 max_seconds = 60 * 5
+            elif job.job_type == JOB_TYPE_SIM_BUILD:
+                max_seconds = 60 * 10
+            else:
+                log.error(f'Unexpected job type {job.job_type} for job: '
+                          f'{job}')
+                return
+        if time.time() - job.started_at.timestamp() > max_seconds:
+            log.error(f'Job {job} took longer than {max_seconds} seconds, '
+                      f'should stop instance: {job.instance_id}!')
+            job.status = JOB_STATUS_TIMED_OUT
+            self.jobs_db.set(job.id, job)
 
-            if time.time() - job.started_at.timestamp() > max_seconds:
-                log.error(f'Job {job} took longer than {max_seconds} seconds, '
-                          f'should stop instance: {job.instance_id}!')
-                job.status = JOB_STATUS_TIMED_OUT
-                self.jobs_db.set(job.id, job)
+            # TODO: Move this into problem-constants and rename
+            #  problem-helpers as it's shared with problem-worker
+            instance = self.instances_db.get(job.instance_id)
+            if instance.status != constants.INSTANCE_STATUS_AVAILABLE:
+                instance.status = constants.INSTANCE_STATUS_AVAILABLE
+                instance.time_last_available = SERVER_TIMESTAMP
+                self.instances_db.set(job.instance_id, instance)
+                log.success(f'Made instance {job.instance_id} available')
 
-                # TODO: Move this into problem-constants and rename
-                #  problem-helpers as it's shared with problem-worker
-                instance = self.instances_db.get(job.instance_id)
-                if instance.status != constants.INSTANCE_STATUS_AVAILABLE:
-                    instance.status = constants.INSTANCE_STATUS_AVAILABLE
-                    instance.time_last_available = SERVER_TIMESTAMP
-                    self.instances_db.set(job.instance_id, instance)
-                    log.success(f'Made instance {job.instance_id} available')
-
-                # self.gce.instances()
-                # TODO: Stop the instance in case there's an issue with the
-                #  instance itself
-                # TODO: Set job error timeout
-                pass
+            # self.gce.instances()
+            # TODO: Stop the instance in case there's an issue with the
+            #  instance itself
+            # TODO: Set job error timeout
+            pass
 
     def check_for_finished_jobs(self):
         # TODO: Make this more efficient by querying instances or just
@@ -173,37 +176,33 @@ class EvaluationManager:
                 ops_still_in_progress.append(op)
         self.gce_ops_in_progress = ops_still_in_progress
 
-    def trigger_eval(self, job) -> Optional[Box]:
-        if not self.confirm_evaluation(job):
-            return
-        problem = job.eval_spec.problem
+    def assign_job(self, job) -> Optional[Box]:
+        if dbox(job).run_local_debug:
+            local_instance_id = 'asdf'
+            log.warning(f'Run local debug is true, setting instance id to '
+                        f'{local_instance_id}')
+            self.assign_job_to_instance(Box(id=local_instance_id), job)
+            return job
 
-        # Verify that the specified problem is supported
-        if problem not in SUPPORTED_PROBLEMS:
-            log.error(f'Unsupported problem "{problem}"')
-            job.status = JOB_STATUS_DENIED_CONFIRMATION
-            self.save_job(job)
-            return
+        worker_instances = self.list_instances(WORKER_INSTANCE_LABEL)
 
-        eval_instances = self.list_instances(INSTANCE_EVAL_LABEL)
-
-        if len(eval_instances) >= MAX_EVAL_INSTANCES:
+        if len(worker_instances) >= MAX_WORKER_INSTANCES:
             log.error(f'Over instance limit, waiting for instances to become '
                       f'available to run job {job.id}')
             return job
 
-        stopped_instances = [inst for inst in eval_instances
+        stopped_instances = [inst for inst in worker_instances
                              if inst.status.lower() == 'terminated']
 
-        started_instances = [inst for inst in eval_instances
+        started_instances = [inst for inst in worker_instances
                              if inst.status.lower() == 'running']
         for inst in started_instances:
             inst_meta = self.instances_db.get(inst.id)
             if not inst_meta or inst_meta.status == INSTANCE_STATUS_AVAILABLE:
                 # Set the instance to used before starting the job in case
                 # it calls back to /results very quickly before setting status.
-                self.save_eval_instance(Box(id=inst.id, inst=inst,
-                                            status=INSTANCE_STATUS_USED))
+                self.save_worker_instance(Box(id=inst.id, inst=inst,
+                                              status=INSTANCE_STATUS_USED))
                 self.assign_job_to_instance(inst, job)
 
                 log.success(f'Marked job {job.id} to start on '
@@ -212,7 +211,6 @@ class EvaluationManager:
         else:
             if stopped_instances:
                 inst = stopped_instances[0]
-                job.instance_id = inst.id
                 self.assign_job_to_instance(inst, job)
                 self.gce_ops_in_progress.append(self.start_instance(inst))
                 log.success(
@@ -220,12 +218,11 @@ class EvaluationManager:
                     f'instance {inst.id} for it.')
             else:
                 self.gce_ops_in_progress.append(self.create_instance(
-                    current_instances=eval_instances))
+                    current_instances=worker_instances))
                 log.success(f'No running or stopped instances available for '
-                            f'job {job.id}, so created new instance {job.id}')
-
-        # TODO: Set DEEPDRIVE_SIM_HOST
-        # TODO: Set network tags between bot and problem container for port 5557
+                            f'job {job.id}, so created new instance.')
+        # TODO(Challenge): For network separation: Set DEEPDRIVE_SIM_HOST
+        # TODO(Challenge): For network separation: Set network tags between bot and problem container for port 5557
         return job
 
     def confirm_evaluation(self, job) -> bool:
@@ -264,14 +261,13 @@ class EvaluationManager:
         # TODO: Compare and swap
         job.status = JOB_STATUS_ASSIGNED
         job.instance_id = instance.id
-        job.started_at = time.time()
+        job.started_at = SERVER_TIMESTAMP
         self.save_job(job)
 
-    def save_eval_instance(self, eval_instance):
+    def save_worker_instance(self, eval_instance):
         self.instances_db.set(eval_instance.id, eval_instance)
 
     def save_job(self, job):
-        job.id = job.eval_spec.eval_id  # The job id is the eval id
         self.jobs_db.set(job.id, job)
         return job.id
 
@@ -294,6 +290,7 @@ class EvaluationManager:
         instance_name = self.get_next_instance_name(current_instances)
         config_path = os.path.join(ROOT, INSTANCE_CONFIG_PATH)
         config = Box.from_json(filename=config_path)
+        # TODO: If job is CI, no GPU needed, but maybe more CPU
         config.name = instance_name
         config.disks[0].deviceName = instance_name
         create_op = Box(self.gce.instances().insert(
@@ -320,23 +317,34 @@ class EvaluationManager:
         instance_name = INSTANCE_NAME_PREFIX + str(next_index)
         return instance_name
 
+    def should_start_job(self, job) -> bool:
+        if job.job_type == JOB_TYPE_EVAL:
+            if not self.confirm_evaluation(job):
+                ret = False
+            else:
+                problem = job.eval_spec.problem
 
-def ping_cronitor(now, last_ping_time, state='run') -> int:
-    if blconfig.is_test:
-        ret = last_ping_time
-    else:
-        log.trace(f'Pinging cronitor with {state}')
-        # Ping cronitor every minute
-        requests.get('https://cronitor.link/MJ8I4x/%s' % state, timeout=10)
-        ret = now
-    return ret
+                # Verify that the specified problem is supported
+                if problem not in SUPPORTED_PROBLEMS:
+                    log.error(f'Unsupported problem "{problem}"')
+                    job.status = JOB_STATUS_DENIED_CONFIRMATION
+                    self.save_job(job)
+                    ret = False
+                else:
+                    ret = True
+        elif job.job_type == JOB_TYPE_SIM_BUILD:
+            ret = True
+        else:
+            log.error(f'Unsupported job type {job.job_type}, skipping job '
+                      f'{job.to_json(indent=2)}')
+            ret = False
+        return ret
 
 
 def main():
     # compute = googleapiclient.discovery.build('compute', 'v1')
     # eval_instances = list_instances(compute, label='deepdrive-eval')
-    eval_mgr = EvaluationManager()
-    eval_mgr.trigger_jobs()
+    pass
 
 
 if __name__ == '__main__':

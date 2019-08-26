@@ -3,18 +3,13 @@ from datetime import datetime
 import signal
 import time
 
-import traceback
 from typing import Union
 
-import loguru
-import requests
-from botleague_helpers.config import blconfig, in_test
+from botleague_helpers.config import in_test
 from botleague_helpers.db import get_db
 from box import Box
 
-from problem_constants import constants
 import utils
-from eval_manager import EvaluationManager
 from logs import log
 
 LOOP_POSTFIX = '-loop-id='

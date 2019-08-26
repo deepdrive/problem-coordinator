@@ -59,7 +59,7 @@
   "description": "",
   "labels": {
     "deepdrive": "",
-    "deepdrive-eval": ""
+    "deepdrive-worker": ""
   },
   "scheduling": {
     "preemptible": false,

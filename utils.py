@@ -91,3 +91,7 @@ def pip_install(*args):
             # Attempting to import said module will hopefully keep this from being hard to track root cause for.
             # TODO: Be more specific about exceptions we swallow.
             print('Error installing %s - error was: %s' % (args, str(e)))
+
+
+def dbox(obj):
+    return Box(obj, default_box=True)

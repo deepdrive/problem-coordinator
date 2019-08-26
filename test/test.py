@@ -102,7 +102,7 @@ def trigger_job(instances_db, job_id, jobs_db, botleague_liaison_host, docker_ta
                    id=job_id,
                    eval_spec=Box(
                        docker_tag=docker_tag,
-                       eval_id=job_id,
+                       eval_id=utils.generate_rand_alphanumeric(32),
                        eval_key='fake_eval_key',
                        seed=1,
                        problem='domain_randomization',

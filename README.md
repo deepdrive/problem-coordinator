@@ -12,7 +12,7 @@ even if there's an error. This means that if you want to stop the service,
 you should stop the VM, as just stopping the container can sometimes
 result in an unexpected restart in my experience.
 
-> The config for the problem-coordinator is [here](cloud_configs/create-problem-coordinator.http). 
+> The config for the problem-coordinator is [here](cloud_config_history/create-problem-coordinator.http). 
 
 This allows you to stop the deployed version and start a local version to debug.
 Then when you want to restart the deployed version, you can run

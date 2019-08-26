@@ -23,4 +23,4 @@ COPY . .
 RUN ["bin/get_problem_constants.sh"]
 
 # Don't run a shell script here or python won't receive SIGnals
-CMD ["python", "-u", "main.py"]
+CMD ["python", "-u", "coordinator.py"]

@@ -36,7 +36,7 @@ test:
 	docker run $(RUN_ARGS_DEV) -it $(TAG) python test/test.py
 
 # GCE runs the container via args configured in the instance, not here!
-run:
+local_run:
 	docker run $(RUN_ARGS) --restart=unless-stopped --detach -e LOGURU_LEVEL=INFO $(TAG)
 
 devrun:

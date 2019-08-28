@@ -43,3 +43,6 @@ devrun:
 
 bash:
 	docker run -it $(TAG) bash
+
+logs:
+	$(SSH) --command "docker logs klt-deepdrive-problem-coordinator-lnaf --follow --tail 100"

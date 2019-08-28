@@ -142,10 +142,16 @@ class JobManager:
         try:
             for job in self.jobs_db.where('status', '==', JOB_STATUS_FINISHED):
                 if 'instance_id' in job:
-                    instance = self.instances_db.get(job.instance_id)
-                    if instance.status == INSTANCE_STATUS_USED:
-                        instance.status = INSTANCE_STATUS_AVAILABLE
-                        self.instances_db.set(job.instance_id, instance)
+                    inst_id = job.instance_id
+                    if inst_id != LOCAL_INSTANCE_ID:
+                        instance = self.instances_db.get(inst_id)
+                        if not instance:
+                            log.warning(
+                                f'Instance "{inst_id}" not found for job:\n'
+                                f'{job.to_json(indent=2, default=str)}')
+                        elif instance.status == INSTANCE_STATUS_USED:
+                            instance.status = INSTANCE_STATUS_AVAILABLE
+                            self.instances_db.set(job.instance_id, instance)
         except:
             log.exception('Unable to check for finished jobs')
 

@@ -2,6 +2,7 @@
 
 TAG=gcr.io/silken-impulse-217423/deepdrive-problem-coordinator
 SSH=gcloud compute ssh deepdrive-problem-coordinator
+SERVER_CONTAINER_NAME= klt-deepdrive-problem-coordinator-lnaf
 
 build:
 	docker build -t $(TAG) .
@@ -45,4 +46,8 @@ bash:
 	docker run -it $(TAG) bash
 
 logs:
-	$(SSH) --command "docker logs klt-deepdrive-problem-coordinator-lnaf --follow --tail 100"
+	$(SSH) --command "docker logs $(SERVER_CONTAINER_NAME) --follow --tail 100"
+
+start:
+	# Use this if you've taken the semaphore locally
+	$(SSH) --command "docker start $(SERVER_CONTAINER_NAME)"

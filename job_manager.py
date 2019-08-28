@@ -16,7 +16,8 @@ from problem_constants.constants import INSTANCE_STATUS_AVAILABLE, \
     WORKER_INSTANCE_LABEL, SUPPORTED_PROBLEMS, INSTANCE_CONFIG_PATH, \
     INSTANCE_NAME_PREFIX, MAX_WORKER_INSTANCES, JOB_STATUS_RUNNING, \
     JOB_STATUS_FINISHED, JOB_STATUS_ASSIGNED, JOB_STATUS_TIMED_OUT, \
-    JOB_STATUS_DENIED_CONFIRMATION, JOB_TYPE_EVAL, JOB_TYPE_SIM_BUILD
+    JOB_STATUS_DENIED_CONFIRMATION, JOB_TYPE_EVAL, JOB_TYPE_SIM_BUILD, \
+    LOCAL_INSTANCE_ID
 from common import get_jobs_db, get_worker_instances
 from logs import log
 from utils import dbox
@@ -184,10 +185,10 @@ class JobManager:
 
     def assign_job(self, job) -> Optional[Box]:
         if dbox(job).run_local_debug:
-            local_instance_id = 'asdf'
             log.warning(f'Run local debug is true, setting instance id to '
-                        f'{local_instance_id}')
-            self.assign_job_to_instance(Box(id=local_instance_id), job)
+                        f'{constants.LOCAL_INSTANCE_ID}')
+            self.assign_job_to_instance(
+                Box(id=constants.LOCAL_INSTANCE_ID), job)
             return job
 
         worker_instances = self.list_instances(WORKER_INSTANCE_LABEL)

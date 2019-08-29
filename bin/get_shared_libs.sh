@@ -11,3 +11,4 @@ cd ${DIR}/..
 
 # Always get the latest for our shared libs
 pip install --upgrade --force-reinstall --ignore-installed git+git://github.com/deepdrive/problem-constants#egg=problem-constants
+pip install --upgrade --force-reinstall --ignore-installed git+git://github.com/deepdrive/botleague-helpers#egg=botleague-helpers

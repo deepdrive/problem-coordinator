@@ -20,7 +20,7 @@ ENTRYPOINT ["/tini", "--"]
 
 COPY . .
 
-RUN ["bin/get_problem_constants.sh"]
+RUN ["bin/get_shared_libs.sh"]
 
 # Don't run a shell script here or python won't receive SIGnals
 CMD ["python", "-u", "coordinator.py"]

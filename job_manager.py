@@ -76,7 +76,8 @@ class JobManager:
         new_jobs = BoxList()
         for job in self.jobs_db.where('status', '==', JOB_STATUS_CREATED):
             try:
-                log.info(f'Assigning job {job.to_json(indent=2, default=str)}')
+                log.info(f'Assigning job '
+                         f'{job.to_json(indent=2, default=str)}...')
                 if self.should_start_job(job):
                     self.assign_job(job)
                     new_jobs.append(job)

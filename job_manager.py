@@ -187,8 +187,7 @@ class JobManager:
         if dbox(job).run_local_debug:
             log.warning(f'Run local debug is true, setting instance id to '
                         f'{constants.LOCAL_INSTANCE_ID}')
-            self.assign_job_to_instance(
-                Box(id=constants.LOCAL_INSTANCE_ID), job)
+            self.assign_job_to_instance(constants.LOCAL_INSTANCE_ID, job)
             return job
 
         worker_instances = self.list_instances(WORKER_INSTANCE_LABEL)
@@ -198,11 +197,22 @@ class JobManager:
                       f'available to run job {job.id}')
             return job
 
-        stopped_instances = [inst for inst in worker_instances
-                             if inst.status.lower() == 'terminated']
+        provisioning_instances = [inst for inst in worker_instances
+                                  if inst.status.lower() == 'provisioning']
+
+        staging_instances = [inst for inst in worker_instances
+                             if inst.status.lower() == 'staging']
 
         started_instances = [inst for inst in worker_instances
                              if inst.status.lower() == 'running']
+
+        # TODO: Handle these
+        stopping_instances = [inst for inst in worker_instances
+                             if inst.status.lower() == 'stopping']
+
+        stopped_instances = [inst for inst in worker_instances
+                             if inst.status.lower() == 'terminated']
+
         for inst in started_instances:
             inst_meta = self.instances_db.get(inst.id)
             if not inst_meta or inst_meta.status == INSTANCE_STATUS_AVAILABLE:
@@ -210,24 +220,31 @@ class JobManager:
                 # it calls back to /results very quickly before setting status.
                 self.save_worker_instance(Box(id=inst.id, inst=inst,
                                               status=INSTANCE_STATUS_USED))
-                self.assign_job_to_instance(inst, job)
+                self.assign_job_to_instance(inst.id, job)
 
                 log.success(f'Marked job {job.id} to start on '
-                            f'instance {inst.id} which was already running')
+                            f'running instance {inst.id}')
                 break
         else:
+            # No started instances available
             if stopped_instances:
                 inst = stopped_instances[0]
-                self.assign_job_to_instance(inst, job)
+                self.save_worker_instance(Box(id=inst.id, inst=inst,
+                                              status=INSTANCE_STATUS_USED))
+                self.assign_job_to_instance(inst.id, job)
                 self.gce_ops_in_progress.append(self.start_instance(inst))
                 log.success(
-                    f'No running instances for job {job.id}, so started '
-                    f'instance {inst.id} for it.')
+                    f'Started instance {inst.id} for job {job.id}')
             else:
-                self.gce_ops_in_progress.append(self.create_instance(
-                    current_instances=worker_instances))
-                log.success(f'No running or stopped instances available for '
-                            f'job {job.id}, so created new instance.')
+                create_op = self.create_instance(
+                    current_instances=worker_instances)
+                instance_id = create_op.targetId
+                self.save_worker_instance(Box(id=instance_id,
+                                              status=INSTANCE_STATUS_USED))
+                self.assign_job_to_instance(instance_id, job)
+                self.gce_ops_in_progress.append(create_op)
+                log.success(f'Created instance {instance_id} for '
+                            f'job {job.id}')
         # TODO(Challenge): For network separation: Set DEEPDRIVE_SIM_HOST
         # TODO(Challenge): For network separation: Set network tags between bot and problem container for port 5557
         return job
@@ -264,15 +281,15 @@ class JobManager:
             zone=self.zone,
             instance=inst.name).execute()
 
-    def assign_job_to_instance(self, instance, job):
+    def assign_job_to_instance(self, instance_id, job):
         # TODO: Compare and swap
         job.status = JOB_STATUS_ASSIGNED
-        job.instance_id = instance.id
+        job.instance_id = instance_id
         job.started_at = SERVER_TIMESTAMP
         self.save_job(job)
 
-    def save_worker_instance(self, eval_instance):
-        self.instances_db.set(eval_instance.id, eval_instance)
+    def save_worker_instance(self, worker_instance):
+        self.instances_db.set(worker_instance.id, worker_instance)
 
     def save_job(self, job):
         self.jobs_db.set(job.id, job)

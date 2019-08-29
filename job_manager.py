@@ -18,7 +18,7 @@ from problem_constants.constants import INSTANCE_STATUS_AVAILABLE, \
     JOB_STATUS_FINISHED, JOB_STATUS_ASSIGNED, JOB_STATUS_TIMED_OUT, \
     JOB_STATUS_DENIED_CONFIRMATION, JOB_TYPE_EVAL, JOB_TYPE_SIM_BUILD, \
     LOCAL_INSTANCE_ID
-from common import get_jobs_db, get_worker_instances
+from common import get_jobs_db, get_worker_instances_db
 from logs import log
 from utils import dbox
 
@@ -57,7 +57,7 @@ class JobManager:
 
     def __init__(self, jobs_db=None, instances_db=None):
         self.gce_ops_in_progress = BoxList()
-        self.instances_db = instances_db or get_worker_instances()
+        self.instances_db = instances_db or get_worker_instances_db()
         self.jobs_db: DB = jobs_db or get_jobs_db()
         self.gce = googleapiclient.discovery.build('compute', 'v1')
         self.project: str = GCP_PROJECT

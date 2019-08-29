@@ -1,6 +1,6 @@
 {
   "kind": "compute#instance",
-  "name": "deepdrive-eval-5",
+  "name": "placeholder",
   "zone": "projects/silken-impulse-217423/zones/us-west1-b",
   "machineType": "projects/silken-impulse-217423/zones/us-west1-b/machineTypes/n1-standard-8",
   "displayDevice": {
@@ -31,9 +31,9 @@
       "boot": true,
       "mode": "READ_WRITE",
       "autoDelete": true,
-      "deviceName": "deepdrive-eval-5",
+      "deviceName": "deepdrive-worker-0",
       "initializeParams": {
-        "sourceImage": "projects/silken-impulse-217423/global/images/deepdrive-eval-image-5",
+        "sourceImage": "projects/silken-impulse-217423/global/images/deepdrive-worker-0",
         "diskType": "projects/silken-impulse-217423/zones/us-west1-b/diskTypes/pd-ssd",
         "diskSizeGb": "100"
       },

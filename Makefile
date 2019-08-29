@@ -22,7 +22,7 @@ ssh:
 prepare:
 	$(SSH) --command "sudo docker image prune -f"
 	$(SSH) --command "sudo docker container prune -f"
-	$(SSH) --command "sudo docker stop $(SERVER_CONTAINER_NAME)"
+	$(SSH) --command "sudo docker stop $(SERVER_CONTAINER_NAME) || echo Perhaps no container"
 
 reboot_vm:
 	$(SSH) --command "echo connection successful"

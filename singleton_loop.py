@@ -36,6 +36,7 @@ class SingletonLoop:
         self.previous_status = None
         self.caught_sigterm = False
         self.caught_sigint = False
+        self.started_waiting_for_other_loop_time = None
         signal.signal(signal.SIGINT, self.handle_sigint)
         signal.signal(signal.SIGTERM, self.handle_sigterm)
 
@@ -102,6 +103,13 @@ class SingletonLoop:
         #  or re-request. As-is we just zombie.
         while not self.granted_semaphore():
             log.info('Waiting for other loop to end')
+            if self.started_waiting_for_other_loop_time is None:
+                self.started_waiting_for_other_loop_time = time.time()
+            if time.time() - self.started_waiting_for_other_loop_time > 5:
+                log.error('Assuming previous loop died without releasing '
+                          'semaphore. Setting to stopped.')
+                self.db.set(STATUS, STOPPED)
+                self.started_waiting_for_other_loop_time = None
             if self.kill_now:
                 log.warning('Killing loop while requesting semaphore, '
                             'here be dragons!')

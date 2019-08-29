@@ -104,8 +104,7 @@ class JobManager:
     def handle_timed_out_jobs(self, job):
         max_seconds = Box(job, default_box=True).eval_spec.max_seconds
         if not max_seconds:
-            log.warning('No max_seconds in problem definition, defaulting'
-                        ' to 5 minutes')
+            log.debug('No max_seconds in problem definition, using default')
             if job.job_type == JOB_TYPE_EVAL:
                 max_seconds = 60 * 5
             elif job.job_type == JOB_TYPE_SIM_BUILD:

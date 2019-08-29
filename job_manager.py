@@ -1,5 +1,5 @@
 import time
-from typing import Optional
+from typing import Optional, List, Tuple
 
 import googleapiclient.discovery
 import os
@@ -23,6 +23,7 @@ from logs import log
 from utils import dbox
 
 ROOT = os.path.dirname(os.path.realpath(__file__))
+SHOULD_TIMEOUT_JOBS = False
 
 # TODO:
 #   [x] We get a call from BL with the eval_id
@@ -100,7 +101,10 @@ class JobManager:
 
     def check_jobs_in_progress(self):
         for job in self.jobs_db.where('status', '==', JOB_STATUS_RUNNING):
-            self.handle_timed_out_jobs(job)
+            if SHOULD_TIMEOUT_JOBS:
+                # TODO: We need to stop the job if it's still running before
+                #  returning the worker back to the instance pool
+                self.handle_timed_out_jobs(job)
 
     def handle_timed_out_jobs(self, job):
         max_seconds = Box(job, default_box=True).eval_spec.max_seconds
@@ -116,7 +120,8 @@ class JobManager:
                 return
         if time.time() - job.started_at.timestamp() > max_seconds:
             log.error(f'Job {job} took longer than {max_seconds} seconds, '
-                      f'should stop instance: {job.instance_id}!')
+                      f'consider stopping instance: {job.instance_id} '
+                      f'in case the instance is bad.')
             job.status = JOB_STATUS_TIMED_OUT
             self.jobs_db.set(job.id, job)
 

@@ -73,8 +73,9 @@ class JobManager:
         #  problem timeout
         # TODO: self.delete_idle_instances_over_threshold()
 
-    def assign_jobs(self) -> BoxList:
+    def assign_jobs(self) -> Tuple[BoxList, List]:
         new_jobs = BoxList()
+        exceptions = []
         for job in self.jobs_db.where('status', '==', JOB_STATUS_CREATED):
             try:
                 log.info(f'Assigning job '
@@ -82,7 +83,7 @@ class JobManager:
                 if self.should_start_job(job):
                     self.assign_job(job)
                     new_jobs.append(job)
-            except:
+            except Exception as e:
                 # Could have been a network failure, so just try again.
                 # More granular exceptions should be handled before this
                 # which can set the job to not run again
@@ -90,6 +91,7 @@ class JobManager:
 
                 log.exception(f'Exception triggering eval for job {job}, '
                               f'will try again shortly.')
+                exceptions.append(e)
 
         # TODO: Check for failed / crashed instance once per minute
         # TODO: Stop instances if they have been idle for longer than timeout
@@ -97,7 +99,7 @@ class JobManager:
         # TODO: Cap instances per bot owner, using first part of docker tag
         # TODO: Delete instances over threshold of stopped+started
 
-        return new_jobs
+        return new_jobs, exceptions
 
     def check_jobs_in_progress(self):
         for job in self.jobs_db.where('status', '==', JOB_STATUS_RUNNING):

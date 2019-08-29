@@ -11,7 +11,7 @@ from problem_constants import constants
 
 import utils
 from problem_constants.constants import JOB_STATUS_CREATED, \
-    INSTANCE_STATUS_USED
+    INSTANCE_STATUS_USED, JOB_TYPE_EVAL
 from job_manager import JobManager
 from singleton_loop import SingletonLoop, STATUS, REQUESTED, RUNNING, STOPPED
 from logs import log
@@ -93,13 +93,15 @@ def manually_trigger_job():
                 docker_tag='deepdriveio/deepdrive:bot_domain_randomization')
 
 
-def trigger_job(instances_db, job_id, jobs_db, botleague_liaison_host, docker_tag=None):
+def trigger_job(instances_db, job_id, jobs_db, botleague_liaison_host,
+                docker_tag=None, job_type=JOB_TYPE_EVAL):
     docker_tag = docker_tag or 'deepdriveio/problem-worker-test'
     eval_mgr = JobManager(jobs_db=jobs_db, instances_db=instances_db)
     eval_mgr.check_for_finished_jobs()
     test_job = Box(botleague_liaison_host=botleague_liaison_host,
                    status=JOB_STATUS_CREATED,
                    id=job_id,
+                   job_type=job_type,
                    eval_spec=Box(
                        docker_tag=docker_tag,
                        eval_id=utils.generate_rand_alphanumeric(32),
@@ -111,7 +113,8 @@ def trigger_job(instances_db, job_id, jobs_db, botleague_liaison_host, docker_ta
 
     try:
         eval_mgr.jobs_db.set(job_id, test_job)
-        new_jobs = eval_mgr.assign_jobs()
+        new_jobs, exceptions = eval_mgr.assign_jobs()
+        assert not exceptions
         if new_jobs:
             # We don't actually start instances but we act like we did.
             assert new_jobs[0].status == JOB_STATUS_CREATED or \

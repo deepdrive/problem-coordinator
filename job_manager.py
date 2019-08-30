@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 import time
 from typing import Optional, List, Tuple
 
@@ -69,6 +71,7 @@ class JobManager:
         self.assign_jobs()
         self.check_gce_ops_in_progress()
         self.check_jobs_in_progress()
+        self.check_for_idle_instances()
         # TODO: self.stop_idle_instances()
         # TODO: restart instances that have been evaluating for more than
         #  problem timeout
@@ -201,10 +204,7 @@ class JobManager:
 
         worker_instances = self.list_instances(WORKER_INSTANCE_LABEL)
 
-        if len(worker_instances) >= MAX_WORKER_INSTANCES:
-            log.error(f'Over instance limit, waiting for instances to become '
-                      f'available to run job {job.id}')
-            return job
+        # https://cloud.google.com/compute/docs/instances/instance-life-cycle
 
         provisioning_instances = [inst for inst in worker_instances
                                   if inst.status.lower() == 'provisioning']
@@ -218,6 +218,10 @@ class JobManager:
         # TODO: Handle these
         stopping_instances = [inst for inst in worker_instances
                              if inst.status.lower() == 'stopping']
+
+        # TODO: Handle these
+        repairing_instances = [inst for inst in worker_instances
+                             if inst.status.lower() == 'repairing']
 
         stopped_instances = [inst for inst in worker_instances
                              if inst.status.lower() == 'terminated']
@@ -377,6 +381,21 @@ class JobManager:
                       f'{job.to_json(indent=2)}')
             ret = False
         return ret
+
+    def check_for_idle_instances(self):
+        return
+        # TODO: Make sure instance name gets set when you create an instance
+        available_instances = self.instances_db.where(
+            'status', '==', INSTANCE_STATUS_AVAILABLE)
+        for instance in available_instances:
+            idle_time = datetime.utcnow() - instance.time_last_available
+            if idle_time > timedelta(minutes=5):
+                stop_op = self.gce.instances().stop(
+                    project=self.project,
+                    zone=self.zone,
+                    instance=instance.name).execute()
+                return stop_op
+
 
 
 def main():

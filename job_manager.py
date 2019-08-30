@@ -245,6 +245,11 @@ class JobManager:
                 log.success(
                     f'Started instance {inst.id} for job {job.id}')
             else:
+                if len(worker_instances) >= MAX_WORKER_INSTANCES:
+                    log.error(
+                        f'Over instance limit, waiting for instances to become '
+                        f'available to run job {job.id}')
+                    return job
                 create_op = self.create_instance(
                     current_instances=worker_instances)
                 instance_id = create_op.targetId

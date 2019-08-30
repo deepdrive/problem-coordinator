@@ -1,11 +1,12 @@
 import time
 from typing import Optional, List, Tuple
 
+# noinspection PyPackageRequirements
 import googleapiclient.discovery
 import os
 
 import requests
-from botleague_helpers.config import blconfig, in_test
+from botleague_helpers.config import in_test
 from box import Box, BoxList
 from botleague_helpers.db import DB
 from google.cloud.firestore_v1 import SERVER_TIMESTAMP
@@ -41,7 +42,7 @@ SHOULD_TIMEOUT_JOBS = False
 #   [x] If the container process ends with a non-zero exit status, the worker process will set an error in the results in Firestore
 #   To detect failed instances, slowly query instance state (once per minute) as most the time it will be fine.
 #   Stop instances after results sent with idle_timeout.
-#   Delete/Kill instances if over threshold of max instances. Meaure start/create over a week, maybe we can just create.
+#   Delete/Kill instances if over threshold of max instances. Measure start/create over a week, maybe we can just create.
 
 
 class JobManager:

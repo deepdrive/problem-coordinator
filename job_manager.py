@@ -126,21 +126,23 @@ class JobManager:
                       f'in case the instance is bad.')
             job.status = JOB_STATUS_TIMED_OUT
             self.jobs_db.set(job.id, job)
-
-            # TODO: Move this into problem-constants and rename
-            #  problem-helpers as it's shared with problem-worker
-            instance = self.instances_db.get(job.instance_id)
-            if instance.status != constants.INSTANCE_STATUS_AVAILABLE:
-                instance.status = constants.INSTANCE_STATUS_AVAILABLE
-                instance.time_last_available = SERVER_TIMESTAMP
-                self.instances_db.set(job.instance_id, instance)
-                log.success(f'Made instance {job.instance_id} available')
-
-            # self.gce.instances()
+            self.make_instance_available(job.instance_id)
             # TODO: Stop the instance in case there's an issue with the
             #  instance itself
             # TODO: Set job error timeout
             pass
+
+    def make_instance_available(self, instance_id):
+        # TODO: Move this into problem-constants and rename
+        #  problem-helpers as it's shared with problem-worker
+        instance = self.instances_db.get(instance_id)
+        if instance.status != constants.INSTANCE_STATUS_AVAILABLE:
+            instance.status = constants.INSTANCE_STATUS_AVAILABLE
+            instance.time_last_available = SERVER_TIMESTAMP
+            self.instances_db.set(instance_id, instance)
+            log.info(f'Made instance {instance_id} available')
+        else:
+            log.warning(f'Instance {instance_id} already available')
 
     def check_for_finished_jobs(self):
         # TODO: Make this more efficient by querying instances or just
@@ -158,8 +160,7 @@ class JobManager:
                                 f'Instance "{inst_id}" not found for job:\n'
                                 f'{job.to_json(indent=2, default=str)}')
                         elif instance.status == INSTANCE_STATUS_USED:
-                            instance.status = INSTANCE_STATUS_AVAILABLE
-                            self.instances_db.set(job.instance_id, instance)
+                            self.make_instance_available(inst_id)
         except:
             log.exception('Unable to check for finished jobs')
 

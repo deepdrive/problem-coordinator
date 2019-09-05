@@ -185,7 +185,7 @@ class JobManager:
                     log.error(
                         f'GCE operation resulted in an error: '
                         f'{op_result.error}\nOperation was:'
-                        f'\n{op.to_json(indent=2)}')
+                        f'\n{op.to_json(indent=2, default=str)}')
                     if op.operationType == 'insert':
                         # Retry the creation?
                         pass
@@ -378,7 +378,7 @@ class JobManager:
             ret = True
         else:
             log.error(f'Unsupported job type {job.job_type}, skipping job '
-                      f'{job.to_json(indent=2)}')
+                      f'{job.to_json(indent=2, default=str)}')
             ret = False
         return ret
 

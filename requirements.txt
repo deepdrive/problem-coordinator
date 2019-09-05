@@ -7,3 +7,4 @@ google-auth>=1.6.3
 google-cloud-logging
 loguru
 git+git://github.com/botleague/botleague-helpers#egg=botleague-helpers
+git+git://github.com/deepdrive/problem-constants#egg=problem-constants

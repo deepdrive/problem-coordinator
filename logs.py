@@ -2,7 +2,7 @@ from google.cloud import logging as gcloud_logging
 import loguru
 from loguru import logger as log
 
-from problem_constants.constants import STACKDRIVER_LOG_NAME
+STACKDRIVER_LOG_NAME = 'deepdrive-coordinator'
 
 stackdriver_client = gcloud_logging.Client()
 

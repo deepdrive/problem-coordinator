@@ -153,8 +153,9 @@ class SingletonLoop:
             new_value=RUNNING + self.id)
         if found_orphan:
             # TODO: Create an alert from this log
-            log.warning(f'Found orphaned {self.id} after requesting! '
-                        f'Did you stop manually?')
+            log.warning(f'Found orphaned semaphore: {self.id}. '
+                        f'Stopping the instance from the UI causes this. Run '
+                        f'`make stop` in the future to avoid this problem.')
         ret = granted or found_orphan
         return ret
 

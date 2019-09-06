@@ -232,7 +232,8 @@ class JobManager:
                 # Set the instance to used before starting the job in case
                 # it calls back to /results very quickly before setting status.
                 self.save_worker_instance(Box(id=inst.id, inst=inst,
-                                              status=INSTANCE_STATUS_USED))
+                                              status=INSTANCE_STATUS_USED,
+                                              assigned_at=SERVER_TIMESTAMP))
                 self.assign_job_to_instance(inst.id, job)
 
                 log.success(f'Marked job {job.id} to start on '
@@ -243,7 +244,9 @@ class JobManager:
             if stopped_instances:
                 inst = stopped_instances[0]
                 self.save_worker_instance(Box(id=inst.id, inst=inst,
-                                              status=INSTANCE_STATUS_USED))
+                                              status=INSTANCE_STATUS_USED,
+                                              assigned_at=SERVER_TIMESTAMP,
+                                              started_at=SERVER_TIMESTAMP,))
                 self.assign_job_to_instance(inst.id, job)
                 self.gce_ops_in_progress.append(self.start_instance(inst))
                 log.success(
@@ -258,7 +261,10 @@ class JobManager:
                     current_instances=worker_instances)
                 instance_id = create_op.targetId
                 self.save_worker_instance(Box(id=instance_id,
-                                              status=INSTANCE_STATUS_USED))
+                                              status=INSTANCE_STATUS_USED,
+                                              assigned_at=SERVER_TIMESTAMP,
+                                              started_at=SERVER_TIMESTAMP,
+                                              created_at=SERVER_TIMESTAMP))
                 self.assign_job_to_instance(instance_id, job)
                 self.gce_ops_in_progress.append(create_op)
                 log.success(f'Created instance {instance_id} for '

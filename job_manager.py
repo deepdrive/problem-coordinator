@@ -82,9 +82,9 @@ class JobManager:
         exceptions = []
         for job in self.jobs_db.where('status', '==', JOB_STATUS_CREATED):
             try:
-                log.info(f'Assigning job '
-                         f'{job.to_json(indent=2, default=str)}...')
                 if self.should_start_job(job):
+                    log.info(f'Assigning job '
+                             f'{job.to_json(indent=2, default=str)}...')
                     self.assign_job(job)
                     new_jobs.append(job)
             except Exception as e:

@@ -293,7 +293,8 @@ class JobManager:
                 ret = False
             else:
                 status = JOB_STATUS_CREATED
-                log.success(f'Confirmed eval {json} at {url}')
+                log.success(f'Confirmed eval job '
+                            f'{job.to_json(indent=2, default=str)} at {url}')
                 ret = True
         job.status = status
         self.save_job(job)

@@ -277,6 +277,11 @@ class JobManager:
         if in_test():
             status = JOB_STATUS_CREATED
             ret = True
+        elif dbox(job).confirmed:
+            log.info(f'Job already confirmed '
+                     f'{job.to_json(indent=2, default=str)}')
+            status = JOB_STATUS_CREATED
+            ret = True
         else:
             url = f'{job.botleague_liaison_host}/confirm'
             json = {'eval_key': job.eval_spec.eval_key}
@@ -297,6 +302,7 @@ class JobManager:
                             f'{job.to_json(indent=2, default=str)} at {url}')
                 ret = True
         job.status = status
+        job.confirmed = ret
         self.save_job(job)
         return ret
 

@@ -10,7 +10,7 @@ import os
 import requests
 from botleague_helpers.config import in_test
 from box import Box, BoxList
-from botleague_helpers.db import DB
+from botleague_helpers.db import DB, get_db
 from google.cloud.firestore_v1 import SERVER_TIMESTAMP
 from problem_constants import constants
 
@@ -29,19 +29,6 @@ ROOT = os.path.dirname(os.path.realpath(__file__))
 SHOULD_TIMEOUT_JOBS = False
 
 # TODO:
-#   [x] We get a call from BL with the eval_id
-#   For problem and bot container
-#   [x] Store the job information in Firestore with the instance-id before starting instance (get from instance creation or from DB on startup)
-#      Here's how you get the instance id on an instance curl "http://metadata.google.internal/computeMetadata/v1/instance/id" -H "Metadata-Flavor: Google"
-#   [x] Start instance in the loop, if none available, create.
-#   Start a problem AND bot instance
-#   If this is a CI run, we'll have to build and push the container first.
-#   [x] If an instance is already created but stopped, then start it
-#   [x] If an instance is already started (check gcloud api with list filter) and available (which can be determined by querying firestore), set Firestore's new job data with instance id
-#   [x] Instances will have run a worker which checks Firestore for jobs using its instance id
-#   [x] All calls in loop should be async, just one sleep at the end.
-#   Set results in Firestore on worker when job is complete then we'll forward to BOTLEAGUE_CALLBACK (for problems only, not bots!).
-#   [x] If the container process ends with a non-zero exit status, the worker process will set an error in the results in Firestore
 #   To detect failed instances, slowly query instance state (once per minute) as most the time it will be fine.
 #   Stop instances after results sent with idle_timeout.
 #   Delete/Kill instances if over threshold of max instances. Measure start/create over a week, maybe we can just create.
@@ -61,7 +48,7 @@ class JobManager:
 
     def __init__(self, jobs_db=None, instances_db=None):
         self.gce_ops_in_progress = BoxList()
-        self.instances_db = instances_db or get_worker_instances_db()
+        self.instances_db: DB = instances_db or get_worker_instances_db()
         self.jobs_db: DB = jobs_db or get_jobs_db()
         self.gce = googleapiclient.discovery.build('compute', 'v1')
         self.project: str = GCP_PROJECT

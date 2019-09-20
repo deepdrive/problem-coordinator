@@ -398,8 +398,6 @@ class JobManager:
         return ret
 
     def check_for_idle_instances(self):
-        return
-        # TODO: Make sure instance name gets set when you create an instance
         available_instances = self.instances_db.where(
             'status', '==', INSTANCE_STATUS_AVAILABLE)
         for instance in available_instances:

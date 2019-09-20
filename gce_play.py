@@ -49,7 +49,7 @@ def list_instances(compute, project, zone):
 
 def create_instance(compute, project, zone, instance_name):
     config = Box.from_json(
-        filename=path.join(ROOT, 'cloud_configs/eval_instance_create.json'))
+        filename=path.join(ROOT, 'cloud_configs/worker_instance_create.json'))
 
     config.name = instance_name
     config.disks[0].deviceName = instance_name
@@ -126,13 +126,11 @@ def main():
     zone = constants.GCP_ZONE
     instances = compute.instances().list(project=project,
                                          zone=zone).execute()
-    # operation = create_instance(compute=compute,
-    #                             project=project, zone=zone,
-    #                             instance_name='deepdrive-eval-test')
+    operation = create_instance(compute=compute,
+                                project=project, zone=zone,
+                                instance_name='deepdrive-eval-test')
     # print(operation)
-
-    pass
-    # wait_for_operation()
+    wait_for_operation(compute, project, zone, operation)
 
 
 

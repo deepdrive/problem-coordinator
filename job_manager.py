@@ -233,7 +233,9 @@ class JobManager:
             if not inst_meta or inst_meta.status == INSTANCE_STATUS_AVAILABLE:
                 # Set the instance to used before starting the job in case
                 # it calls back to /results very quickly before setting status.
-                self.save_worker_instance(Box(id=inst.id, inst=inst,
+                self.save_worker_instance(Box(id=inst.id,
+                                              name=inst.name,
+                                              inst=inst,
                                               status=INSTANCE_STATUS_USED,
                                               assigned_at=SERVER_TIMESTAMP))
                 self.assign_job_to_instance(inst.id, job)
@@ -245,7 +247,9 @@ class JobManager:
             # No started instances available
             if stopped_instances:
                 inst = stopped_instances[0]
-                self.save_worker_instance(Box(id=inst.id, inst=inst,
+                self.save_worker_instance(Box(id=inst.id,
+                                              name=inst.name,
+                                              inst=inst,
                                               status=INSTANCE_STATUS_USED,
                                               assigned_at=SERVER_TIMESTAMP,
                                               started_at=SERVER_TIMESTAMP,))
@@ -262,7 +266,9 @@ class JobManager:
                 create_op = self.create_instance(
                     current_instances=worker_instances)
                 instance_id = create_op.targetId
+                instance_name = create_op.targetLink.split('/')[-1]
                 self.save_worker_instance(Box(id=instance_id,
+                                              name=instance_name,
                                               status=INSTANCE_STATUS_USED,
                                               assigned_at=SERVER_TIMESTAMP,
                                               started_at=SERVER_TIMESTAMP,

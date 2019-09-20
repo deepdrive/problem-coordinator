@@ -204,6 +204,8 @@ class JobManager:
 
         worker_instances = self.list_instances(WORKER_INSTANCE_LABEL)
 
+        self.prune_terminated_instances(worker_instances)
+
         # https://cloud.google.com/compute/docs/instances/instance-life-cycle
 
         provisioning_instances = [inst for inst in worker_instances
@@ -409,11 +411,22 @@ class JobManager:
                     instance=instance.name).execute()
                 return stop_op
 
+    def prune_terminated_instances(self, worker_instances):
+        worker_ids = [w.id for w in worker_instances]
+        db_instances = self.instances_db.where('id', '>', '')
+        term_db = get_db('deepdrive_worker_instances_terminated')
+        for dbinst in db_instances:
+            if dbinst.id not in worker_ids:
+                term_db.set(dbinst.id, dbinst)
+                self.instances_db.delete(dbinst.id)
 
 
 def main():
     # compute = googleapiclient.discovery.build('compute', 'v1')
     # eval_instances = list_instances(compute, label='deepdrive-eval')
+    mgr = JobManager()
+    worker_instances = mgr.list_instances(WORKER_INSTANCE_LABEL)
+    mgr.prune_terminated_instances(worker_instances)
     pass
 
 

@@ -147,7 +147,7 @@ class JobManager:
                     if inst_id != LOCAL_INSTANCE_ID:
                         instance = self.instances_db.get(inst_id)
                         if not instance:
-                            log.warning(
+                            log.debug(
                                 f'Instance "{inst_id}" not found for job:\n'
                                 f'{job.to_json(indent=2, default=str)}')
                         elif instance.status == INSTANCE_STATUS_USED:

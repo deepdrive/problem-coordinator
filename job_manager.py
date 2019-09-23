@@ -23,7 +23,7 @@ from problem_constants.constants import INSTANCE_STATUS_AVAILABLE, \
     LOCAL_INSTANCE_ID
 from common import get_jobs_db, get_worker_instances_db
 from logs import log
-from utils import dbox
+from utils import dbox, box2json, get_datetime_from_datetime_nanos
 
 ROOT = os.path.dirname(os.path.realpath(__file__))
 SHOULD_TIMEOUT_JOBS = False
@@ -394,8 +394,10 @@ class JobManager:
         available_instances = self.instances_db.where(
             'status', '==', INSTANCE_STATUS_AVAILABLE)
         for instance in available_instances:
-            idle_time = datetime.utcnow() - instance.time_last_available
+            last_dt = get_datetime_from_datetime_nanos(instance)
+            idle_time = datetime.utcnow() - last_dt
             if idle_time > timedelta(minutes=5):
+                log.info(f'Stopping idle instance {box2json(instance)}')
                 stop_op = self.gce.instances().stop(
                     project=self.project,
                     zone=self.zone,
@@ -416,8 +418,9 @@ def main():
     # compute = googleapiclient.discovery.build('compute', 'v1')
     # eval_instances = list_instances(compute, label='deepdrive-eval')
     mgr = JobManager()
-    worker_instances = mgr.list_instances(WORKER_INSTANCE_LABEL)
-    mgr.prune_terminated_instances(worker_instances)
+    # worker_instances = mgr.list_instances(WORKER_INSTANCE_LABEL)
+    # mgr.prune_terminated_instances(worker_instances)
+    # mgr.check_for_idle_instances()  # Risky without owning semaphore!
     pass
 
 

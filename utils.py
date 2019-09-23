@@ -95,3 +95,14 @@ def pip_install(*args):
 
 def dbox(obj):
     return Box(obj, default_box=True)
+
+
+def box2json(box: Box):
+    return box.to_json(indent=2, default=str)
+
+
+def get_datetime_from_datetime_nanos(instance):
+    la = instance.time_last_available
+    last_dt = datetime(la.year, la.month, la.day, la.hour, la.minute,
+                       la.second, la.microsecond)
+    return last_dt

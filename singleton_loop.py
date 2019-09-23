@@ -154,8 +154,11 @@ class SingletonLoop:
         if found_orphan:
             # TODO: Create an alert from this log
             log.warning(f'Found orphaned semaphore: {self.id}. '
-                        f'Stopping the instance from the UI causes this. Run '
-                        f'`make stop` in the future to avoid this problem.')
+                        f'This can happen when this process is forcefully '
+                        f'killed. '
+                        f'i.e. stopping the instance from the UI can cause '
+                        f'this. You can run `make stop` to properly shut '
+                        f'down the server.')
         ret = granted or found_orphan
         return ret
 

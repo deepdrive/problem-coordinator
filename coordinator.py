@@ -1,3 +1,5 @@
+import sys
+
 import requests
 from botleague_helpers.config import in_test
 from problem_constants import constants
@@ -9,7 +11,9 @@ from logs import log
 
 def main():
     job_manager = JobManager()
-    job_manager.check_for_finished_jobs()
+
+    if '--check-for-finished-jobs' in sys.argv:
+        job_manager.check_for_finished_jobs()
 
     def loop_fn():
         ping_cronitor('run')

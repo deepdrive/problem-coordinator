@@ -1,7 +1,7 @@
 # Problem coordinator
 
-Event loop that starts instances and assigns eval jobs to them for Deepdrive's
-Botleague implementation.
+Event loop (single actor model) that starts instances and assigns eval jobs 
+to them for Deepdrive's Botleague implementation.
 
 
 # Deployment

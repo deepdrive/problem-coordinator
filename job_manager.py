@@ -189,7 +189,7 @@ class JobManager:
             self.assign_job_to_instance(constants.LOCAL_INSTANCE_ID, job)
             return job
 
-        worker_instances = self.list_instances(WORKER_INSTANCE_LABEL)
+        worker_instances = self.get_worker_instances()
 
         self.prune_terminated_instances(worker_instances)
 
@@ -267,6 +267,9 @@ class JobManager:
         # TODO(Challenge): For network separation: Set DEEPDRIVE_SIM_HOST
         # TODO(Challenge): For network separation: Set network tags between bot and problem container for port 5557
         return job
+
+    def get_worker_instances(self):
+        return self.list_instances(WORKER_INSTANCE_LABEL)
 
     def confirm_evaluation(self, job) -> bool:
         if in_test():
@@ -393,10 +396,17 @@ class JobManager:
     def check_for_idle_instances(self):
         available_instances = self.instances_db.where(
             'status', '==', INSTANCE_STATUS_AVAILABLE)
+        gce_workers = self.get_worker_instances()
         for instance in available_instances:
             last_dt = get_datetime_from_datetime_nanos(instance)
             idle_time = datetime.utcnow() - last_dt
-            if idle_time > timedelta(minutes=5):
+            gce_worker = [w for w in gce_workers if w.id == dbox(instance).id]
+            if gce_worker:
+                gce_status = gce_worker[0].status
+            else:
+                gce_status = 'NOT FOUND'
+
+            if idle_time > timedelta(minutes=5) and gce_status == 'RUNNING':
                 log.info(f'Stopping idle instance {box2json(instance)}')
                 stop_op = self.gce.instances().stop(
                     project=self.project,

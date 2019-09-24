@@ -26,12 +26,10 @@ from logs import log
 from utils import dbox, box2json, get_datetime_from_datetime_nanos
 
 ROOT = os.path.dirname(os.path.realpath(__file__))
-SHOULD_TIMEOUT_JOBS = False
+SHOULD_TIMEOUT_JOBS = False  # Need to implement stopping instances first
 
 # TODO:
-#   To detect failed instances, slowly query instance state (once per minute) as most the time it will be fine.
-#   Stop instances after results sent with idle_timeout.
-#   Delete/Kill instances if over threshold of max instances. Measure start/create over a week, maybe we can just create.
+#   To detect failed instances, use worker heartbeat to problem endpoint
 
 
 class JobManager:

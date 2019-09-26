@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import datetime, timedelta
 
 import time
@@ -186,85 +187,98 @@ class JobManager:
                         f'{constants.LOCAL_INSTANCE_ID}')
             self.assign_job_to_instance(constants.LOCAL_INSTANCE_ID, job)
             return job
-
         worker_instances = self.get_worker_instances()
-
         self.prune_terminated_instances(worker_instances)
-
-        # https://cloud.google.com/compute/docs/instances/instance-life-cycle
-
-        provisioning_instances = [inst for inst in worker_instances
-                                  if inst.status.lower() == 'provisioning']
-
-        staging_instances = [inst for inst in worker_instances
-                             if inst.status.lower() == 'staging']
-
-        started_instances = [inst for inst in worker_instances
-                             if inst.status.lower() == 'running']
-
-        # TODO: Handle these
-        stopping_instances = [inst for inst in worker_instances
-                             if inst.status.lower() == 'stopping']
-
-        # TODO: Handle these
-        repairing_instances = [inst for inst in worker_instances
-                             if inst.status.lower() == 'repairing']
-
-        stopped_instances = [inst for inst in worker_instances
-                             if inst.status.lower() == 'terminated']
-
-        for inst in started_instances:
-            inst_meta = self.instances_db.get(inst.id)
-            if not inst_meta or inst_meta.status == INSTANCE_STATUS_AVAILABLE:
-                # Set the instance to used before starting the job in case
-                # it calls back to /results very quickly before setting status.
-                self.save_worker_instance(Box(id=inst.id,
-                                              name=inst.name,
-                                              inst=inst,
-                                              status=INSTANCE_STATUS_USED,
-                                              assigned_at=SERVER_TIMESTAMP))
-                self.assign_job_to_instance(inst.id, job)
-
-                log.success(f'Marked job {job.id} to start on '
-                            f'running instance {inst.id}')
-                break
+        available_running_instances, available_stopped_instances = \
+            self.get_available_instances(worker_instances)
+        if available_running_instances:
+            self.assign_to_running_instance(available_running_instances, job)
+        elif available_stopped_instances:
+            self.start_instance_and_assign(available_stopped_instances, job)
         else:
-            # No started instances available
-            if stopped_instances:
-                inst = stopped_instances[0]
-                self.save_worker_instance(Box(id=inst.id,
-                                              name=inst.name,
-                                              inst=inst,
-                                              status=INSTANCE_STATUS_USED,
-                                              assigned_at=SERVER_TIMESTAMP,
-                                              started_at=SERVER_TIMESTAMP,))
-                self.assign_job_to_instance(inst.id, job)
-                self.gce_ops_in_progress.append(self.start_instance(inst))
-                log.success(
-                    f'Started instance {inst.id} for job {job.id}')
+            if len(worker_instances) < MAX_WORKER_INSTANCES:
+                self.create_instance_and_assign(job, worker_instances)
             else:
-                if len(worker_instances) >= MAX_WORKER_INSTANCES:
-                    log.error(
-                        f'Over instance limit, waiting for instances to become '
-                        f'available to run job {job.id}')
-                    return job
-                create_op = self.create_instance(
-                    current_instances=worker_instances)
-                instance_id = create_op.targetId
-                instance_name = create_op.targetLink.split('/')[-1]
-                self.save_worker_instance(Box(id=instance_id,
-                                              name=instance_name,
-                                              status=INSTANCE_STATUS_USED,
-                                              assigned_at=SERVER_TIMESTAMP,
-                                              started_at=SERVER_TIMESTAMP,
-                                              created_at=SERVER_TIMESTAMP))
-                self.assign_job_to_instance(instance_id, job)
-                self.gce_ops_in_progress.append(create_op)
-                log.success(f'Created instance {instance_id} for '
-                            f'job {job.id}')
+                log.error(
+                    f'Over instance limit, waiting for instances to become '
+                    f'available to run job {job.id}')
+                return job
+
         # TODO(Challenge): For network separation: Set DEEPDRIVE_SIM_HOST
-        # TODO(Challenge): For network separation: Set network tags between bot and problem container for port 5557
+        # TODO(Challenge): For network separation: Set network tags between
+        #  bot and problem container for port 5557
         return job
+
+    def create_instance_and_assign(self, job, worker_instances):
+        create_op = self.create_instance(
+            current_instances=worker_instances)
+        instance_id = create_op.targetId
+        instance_name = create_op.targetLink.split('/')[-1]
+        self.save_worker_instance(Box(id=instance_id,
+                                      name=instance_name,
+                                      status=INSTANCE_STATUS_USED,
+                                      assigned_at=SERVER_TIMESTAMP,
+                                      started_at=SERVER_TIMESTAMP,
+                                      created_at=SERVER_TIMESTAMP))
+        self.assign_job_to_instance(instance_id, job)
+        self.gce_ops_in_progress.append(create_op)
+        log.success(f'Created instance {instance_id} for '
+                    f'job {job.id}')
+
+    def start_instance_and_assign(self, available_stopped_instances, job):
+        self.assign_job_to_stopped_instance(available_stopped_instances,
+                                            job)
+
+    def assign_job_to_stopped_instance(self, available_stopped_instances, job):
+        # We can't assume stopped instances are available
+        # as starting an instance is not immediately reflected in GCE's API
+        # :(
+        inst = available_stopped_instances[0]
+        self.save_worker_instance(Box(id=inst.id,
+                                      name=inst.name,
+                                      inst=inst,
+                                      status=INSTANCE_STATUS_USED,
+                                      assigned_at=SERVER_TIMESTAMP,
+                                      started_at=SERVER_TIMESTAMP, ))
+        self.assign_job_to_instance(inst.id, job)
+        self.start_instance(inst)
+        log.success(
+            f'Started instance {inst.id} for job {job.id}')
+
+    def assign_to_running_instance(self, available_running_instances, job):
+        inst = available_running_instances[0]
+        # Set the instance to used before starting the job in case
+        # it calls back to /results very quickly before setting status.
+        self.save_worker_instance(Box(id=inst.id,
+                                      name=inst.name,
+                                      inst=inst,
+                                      status=INSTANCE_STATUS_USED,
+                                      assigned_at=SERVER_TIMESTAMP))
+        self.assign_job_to_instance(inst.id, job)
+        log.success(f'Marked job {job.id} to start on '
+                    f'running instance {inst.id}')
+
+    def get_available_instances(self, worker_instances):
+        def get_available(instances):
+            ret = []
+            for inst in instances:
+                inst_meta = dbox(self.instances_db.get(inst.id))
+                if inst_meta.status == INSTANCE_STATUS_AVAILABLE:
+                    ret.append(inst)
+            return ret
+        # https://cloud.google.com/compute/docs/instances/instance-life-cycle
+        instances_by_status = group_instances_by_status(worker_instances)
+        provisioning_instances = instances_by_status.get('provisioning')
+        staging_instances = instances_by_status.get('staging')
+        running_instances = instances_by_status.get('running')
+        # TODO: Handle these
+        stopping_instances = instances_by_status.get('stopping')
+        # TODO: Handle these
+        repairing_instances = instances_by_status.get('repairing')
+        stopped_instances = instances_by_status.get('terminated')
+        available_running_instances = get_available(running_instances)
+        available_stopped_instances = get_available(stopped_instances)
+        return available_running_instances, available_stopped_instances
 
     def get_worker_instances(self):
         return self.list_instances(WORKER_INSTANCE_LABEL)
@@ -303,10 +317,14 @@ class JobManager:
         return ret
 
     def start_instance(self, inst):
-        return self.gce.instances().start(
-            project=self.project,
-            zone=self.zone,
-            instance=inst.name).execute()
+        if in_test():
+            log.warning('Not starting instance in test')
+        else:
+            op = self.gce.instances().start(
+                project=self.project,
+                zone=self.zone,
+                instance=inst.name).execute()
+            self.gce_ops_in_progress.append(op)
 
     def assign_job_to_instance(self, instance_id, job):
         # TODO: Compare and swap
@@ -420,6 +438,13 @@ class JobManager:
             if dbinst.id not in worker_ids:
                 term_db.set(dbinst.id, dbinst)
                 self.instances_db.delete(dbinst.id)
+
+
+def group_instances_by_status(worker_instances):
+    ret = defaultdict(list)
+    for inst in worker_instances:
+        ret[inst.status.lower()].append(inst)
+    return ret
 
 
 def main():

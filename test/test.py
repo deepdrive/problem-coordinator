@@ -2,6 +2,8 @@ import sys
 
 import os
 
+from common import get_worker_instances_db
+
 ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, ROOT)
 
@@ -110,6 +112,11 @@ def trigger_job(instances_db, job_id, jobs_db, botleague_liaison_host,
                        problem='domain_randomization',
                        pull_request=None,
                        max_seconds=20))
+
+    # Make a copy of prod instances
+    prod_instances_db = get_worker_instances_db(force_firestore_db=True)
+    for inst in prod_instances_db.where('id', '>', ''):
+        instances_db.set(inst.id, inst)
 
     try:
         eval_mgr.jobs_db.set(job_id, test_job)

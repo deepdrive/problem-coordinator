@@ -105,7 +105,7 @@ class JobManager:
             if job.job_type == JOB_TYPE_EVAL:
                 max_seconds = 60 * 5
             elif job.job_type == JOB_TYPE_SIM_BUILD:
-                max_seconds = 60 * 10
+                max_seconds = 60 * 60
             else:
                 log.error(f'Unexpected job type {job.job_type} for job: '
                           f'{job}')

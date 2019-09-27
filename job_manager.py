@@ -271,13 +271,13 @@ class JobManager:
         # https://cloud.google.com/compute/docs/instances/instance-life-cycle
         instances_by_status = group_instances_by_status(worker_instances)
         provisioning_instances = instances_by_status.get('provisioning')
-        staging_instances = instances_by_status.get('staging')
-        running_instances = instances_by_status.get('running')
+        staging_instances = instances_by_status['staging']
+        running_instances = instances_by_status['running']
         # TODO: Handle these
-        stopping_instances = instances_by_status.get('stopping')
+        stopping_instances = instances_by_status['stopping']
         # TODO: Handle these
-        repairing_instances = instances_by_status.get('repairing')
-        stopped_instances = instances_by_status.get('terminated')
+        repairing_instances = instances_by_status['repairing']
+        stopped_instances = instances_by_status['terminated']
         available_running_instances = get_available(running_instances)
         available_stopped_instances = get_available(stopped_instances)
         return available_running_instances, available_stopped_instances

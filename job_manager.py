@@ -27,7 +27,7 @@ from logs import log
 from utils import dbox, box2json, get_datetime_from_datetime_nanos
 
 ROOT = os.path.dirname(os.path.realpath(__file__))
-SHOULD_TIMEOUT_JOBS = False  # Need to implement stopping instances first
+SHOULD_TIMEOUT_JOBS = True
 
 # TODO:
 #   To detect failed instances, use worker heartbeat to problem endpoint

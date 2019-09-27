@@ -11,7 +11,7 @@
     "items": [
       {
         "key": "startup-script",
-        "value": "sudo docker pull deepdriveio/problem-worker"
+        "value": "sudo docker pull deepdriveio/problem-worker; sudo docker pull adamrehn/ue4-runtime:tensorflow-virtualgl"
       }
     ]
   },

@@ -126,7 +126,9 @@ class JobManager:
         # TODO: Move this into problem-constants and rename
         #  problem-helpers as it's shared with problem-worker
         instance = self.instances_db.get(instance_id)
-        if instance.status != constants.INSTANCE_STATUS_AVAILABLE:
+        if not instance:
+            log.warning('Instance does not exist, perhaps it was terminated.')
+        elif instance.status != constants.INSTANCE_STATUS_AVAILABLE:
             instance.status = constants.INSTANCE_STATUS_AVAILABLE
             instance.time_last_available = SERVER_TIMESTAMP
             self.instances_db.set(instance_id, instance)

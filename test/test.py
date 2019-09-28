@@ -2,8 +2,6 @@ import sys
 
 import os
 
-from common import get_worker_instances_db
-
 ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, ROOT)
 
@@ -17,6 +15,7 @@ from problem_constants.constants import JOB_STATUS_CREATED, \
 from job_manager import JobManager
 from singleton_loop import SingletonLoop, STATUS, REQUESTED, RUNNING, STOPPED
 from logs import log
+from common import get_worker_instances_db
 
 
 def test_singleton_loop_local():

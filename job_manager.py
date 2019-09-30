@@ -360,6 +360,9 @@ class JobManager:
         return ret
 
     def create_instance(self, current_instances):
+        if in_test():
+            log.warning('Not creating instance in test')
+            return None
         instance_name = self.get_next_instance_name(current_instances)
         config_path = os.path.join(ROOT, INSTANCE_CONFIG_PATH)
         config = Box.from_json(filename=config_path)

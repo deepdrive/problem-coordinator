@@ -111,9 +111,9 @@ class JobManager:
                           f'{job}')
                 return
         if time.time() - job.started_at.timestamp() > max_seconds:
-            log.error(f'Job {job} took longer than {max_seconds} seconds, '
+            log.error(f'Job took longer than {max_seconds} seconds, '
                       f'consider stopping instance: {job.instance_id} '
-                      f'in case the instance is bad.')
+                      f'in case the instance is bad. Job:\n{box2json(job)}')
             job.status = JOB_STATUS_TIMED_OUT
             self.jobs_db.set(job.id, job)
             self.make_instance_available(job.instance_id)
@@ -265,7 +265,9 @@ class JobManager:
             ret = []
             for inst in instances:
                 inst_meta = dbox(self.instances_db.get(inst.id))
-                if inst_meta.status == INSTANCE_STATUS_AVAILABLE:
+                if not inst_meta:
+                    log.error(f'Could not find instance {inst.id} in DB')
+                elif inst_meta.status == INSTANCE_STATUS_AVAILABLE:
                     ret.append(inst)
             return ret
         # https://cloud.google.com/compute/docs/instances/instance-life-cycle

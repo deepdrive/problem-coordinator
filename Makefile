@@ -5,7 +5,7 @@ SSH=gcloud compute ssh deepdrive-problem-coordinator
 SERVER_CONTAINER_NAME= klt-deepdrive-problem-coordinator-lnaf
 
 build:
-	docker build -t $(TAG) .
+	docker build --network=host -t $(TAG) .
 
 push:
 	docker push $(TAG)

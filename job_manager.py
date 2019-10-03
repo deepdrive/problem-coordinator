@@ -58,7 +58,6 @@ class JobManager:
         self.check_gce_ops_in_progress()
         self.check_jobs_in_progress()
         self.check_for_idle_instances()
-        # TODO: self.stop_idle_instances()
         # TODO: restart instances that have been evaluating for more than
         #  problem timeout
         # TODO: self.delete_idle_instances_over_threshold()

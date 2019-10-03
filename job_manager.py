@@ -201,7 +201,7 @@ class JobManager:
             if len(worker_instances) < MAX_WORKER_INSTANCES:
                 self.create_instance_and_assign(job, worker_instances)
             else:
-                log.error(
+                log.warning(
                     f'Over instance limit, waiting for instances to become '
                     f'available to run job {job.id}')
                 return job

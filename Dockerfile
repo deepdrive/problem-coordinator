@@ -24,7 +24,5 @@ COPY . .
 RUN pip install --upgrade --force-reinstall --ignore-installed --no-cache-dir git+git://github.com/botleague/botleague-helpers#egg=botleague-helpers
 RUN pip install --upgrade --force-reinstall --ignore-installed --no-cache-dir git+git://github.com/deepdrive/problem-constants#egg=problem-constants
 
-RUN ["bin/get_shared_libs.sh"]
-
 # Don't run a shell script here or python won't receive SIGnals
 CMD ["python", "-u", "coordinator.py"]

@@ -21,7 +21,7 @@ from problem_constants.constants import INSTANCE_STATUS_AVAILABLE, \
     INSTANCE_NAME_PREFIX, MAX_WORKER_INSTANCES, JOB_STATUS_RUNNING, \
     JOB_STATUS_FINISHED, JOB_STATUS_ASSIGNED, JOB_STATUS_TIMED_OUT, \
     JOB_STATUS_DENIED_CONFIRMATION, JOB_TYPE_EVAL, JOB_TYPE_SIM_BUILD, \
-    LOCAL_INSTANCE_ID
+    JOB_TYPES, LOCAL_INSTANCE_ID
 from common import get_jobs_db, get_worker_instances_db
 from logs import log
 from utils import dbox, box2json, get_datetime_from_datetime_nanos
@@ -407,7 +407,7 @@ class JobManager:
                     ret = False
                 else:
                     ret = True
-        elif job.job_type == JOB_TYPE_SIM_BUILD:
+        elif job.job_type in JOB_TYPES:
             ret = True
         else:
             log.error(f'Unsupported job type {job.job_type}, skipping job '

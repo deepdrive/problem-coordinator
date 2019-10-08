@@ -69,7 +69,7 @@ class JobManager:
             try:
                 if self.should_start_job(job):
                     log.info(f'Assigning job '
-                             f'{job.to_json(indent=2, default=str)}...')
+                             f'{box2json(job)}...')
                     self.assign_job(job)
                     new_jobs.append(job)
             except Exception as e:
@@ -149,7 +149,7 @@ class JobManager:
                         if not instance:
                             log.debug(
                                 f'Instance "{inst_id}" not found for job:\n'
-                                f'{job.to_json(indent=2, default=str)}')
+                                f'{box2json(job)}')
                         elif instance.status == INSTANCE_STATUS_USED:
                             self.make_instance_available(inst_id)
         except:
@@ -172,7 +172,7 @@ class JobManager:
                     log.error(
                         f'GCE operation resulted in an error: '
                         f'{op_result.error}\nOperation was:'
-                        f'\n{op.to_json(indent=2, default=str)}')
+                        f'\n{box2json(op)}')
                     if op.operationType == 'insert':
                         # Retry the creation?
                         pass
@@ -292,7 +292,7 @@ class JobManager:
             ret = True
         elif dbox(job).confirmed:
             log.info(f'Job already confirmed '
-                     f'{job.to_json(indent=2, default=str)}')
+                     f'{box2json(job)}')
             status = JOB_STATUS_CREATED
             ret = True
         else:
@@ -312,7 +312,7 @@ class JobManager:
             else:
                 status = JOB_STATUS_CREATED
                 log.success(f'Confirmed eval job '
-                            f'{job.to_json(indent=2, default=str)} at {url}')
+                            f'{box2json(job)} at {url}')
                 ret = True
         job.status = status
         job.confirmed = ret
@@ -411,7 +411,7 @@ class JobManager:
             ret = True
         else:
             log.error(f'Unsupported job type {job.job_type}, skipping job '
-                      f'{job.to_json(indent=2, default=str)}')
+                      f'{box2json(job)}')
             ret = False
         return ret
 

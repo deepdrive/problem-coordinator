@@ -92,15 +92,6 @@ def pip_install(*args):
             # TODO: Be more specific about exceptions we swallow.
             print('Error installing %s - error was: %s' % (args, str(e)))
 
-
-def dbox(obj):
-    return Box(obj, default_box=True)
-
-
-def box2json(box: Box):
-    return box.to_json(indent=2, default=str)
-
-
 def get_datetime_from_datetime_nanos(instance):
     la = instance.time_last_available
     last_dt = datetime(la.year, la.month, la.day, la.hour, la.minute,

@@ -14,17 +14,18 @@ from box import Box, BoxList
 from botleague_helpers.db import DB, get_db
 from google.cloud.firestore_v1 import SERVER_TIMESTAMP
 from problem_constants import constants
-
+from botleague_helpers.utils import box2json, dbox
 from problem_constants.constants import INSTANCE_STATUS_AVAILABLE, \
     INSTANCE_STATUS_USED, JOB_STATUS_CREATED, GCP_ZONE, GCP_PROJECT, \
     WORKER_INSTANCE_LABEL, SUPPORTED_PROBLEMS, INSTANCE_CONFIG_PATH, \
     INSTANCE_NAME_PREFIX, MAX_WORKER_INSTANCES, JOB_STATUS_RUNNING, \
     JOB_STATUS_FINISHED, JOB_STATUS_ASSIGNED, JOB_STATUS_TIMED_OUT, \
     JOB_STATUS_DENIED_CONFIRMATION, JOB_TYPE_EVAL, JOB_TYPE_SIM_BUILD, \
-    JOB_TYPES, LOCAL_INSTANCE_ID
+    JOB_TYPES, LOCAL_INSTANCE_ID, JOB_TYPE_DEEPDRIVE_BUILD
 from common import get_jobs_db, get_worker_instances_db
 from logs import log
-from utils import dbox, box2json, get_datetime_from_datetime_nanos
+
+from utils import get_datetime_from_datetime_nanos
 
 ROOT = os.path.dirname(os.path.realpath(__file__))
 SHOULD_TIMEOUT_JOBS = True
@@ -103,12 +104,12 @@ class JobManager:
             log.debug('No max_seconds in problem definition, using default')
             if job.job_type == JOB_TYPE_EVAL:
                 max_seconds = 60 * 5
-            elif job.job_type == JOB_TYPE_SIM_BUILD:
+            elif job.job_type in [JOB_TYPE_SIM_BUILD, JOB_TYPE_DEEPDRIVE_BUILD]:
                 max_seconds = 60 * 60
             else:
                 log.error(f'Unexpected job type {job.job_type} for job: '
-                          f'{job}')
-                return
+                          f'{box2json(job)} setting timeout to 5 minutes')
+                max_seconds = 60 * 5
         if time.time() - job.started_at.timestamp() > max_seconds:
             log.error(f'Job took longer than {max_seconds} seconds, '
                       f'consider stopping instance: {job.instance_id} '

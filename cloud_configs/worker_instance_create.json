@@ -35,7 +35,7 @@
       "initializeParams": {
         "sourceImage": "projects/silken-impulse-217423/global/images/deepdrive-worker-0",
         "diskType": "projects/silken-impulse-217423/zones/us-west1-b/diskTypes/pd-ssd",
-        "diskSizeGb": "200"
+        "diskSizeGb": "400"
       },
       "diskEncryptionKey": {}
     }

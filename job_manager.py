@@ -100,8 +100,9 @@ class JobManager:
 
     def handle_timed_out_jobs(self, job):
         max_seconds = Box(job, default_box=True).eval_spec.max_seconds
+        used_default_max_seconds = False
         if not max_seconds:
-            log.debug('No max_seconds in problem definition, using default')
+            used_default_max_seconds = True
             if job.job_type == JOB_TYPE_EVAL:
                 max_seconds = 60 * 5
             elif job.job_type in [JOB_TYPE_SIM_BUILD, JOB_TYPE_DEEPDRIVE_BUILD]:
@@ -111,6 +112,8 @@ class JobManager:
                           f'{box2json(job)} setting timeout to 5 minutes')
                 max_seconds = 60 * 5
         if time.time() - job.started_at.timestamp() > max_seconds:
+            if used_default_max_seconds:
+                log.debug('No max_seconds in problem definition, used default')
             log.error(f'Job took longer than {max_seconds} seconds, '
                       f'consider stopping instance: {job.instance_id} '
                       f'in case the instance is bad. Job:\n{box2json(job)}')

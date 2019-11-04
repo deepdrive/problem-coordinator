@@ -51,7 +51,7 @@ bash:
 	docker run -it $(TAG) bash
 
 logs:
-	$(SSH) --command "docker logs $(SERVER_CONTAINER_NAME) --follow --tail 100"
+	$(SSH) --command "docker logs $(SERVER_CONTAINER_NAME) --follow --tail 1000"
 
 start:
 	# Use this if you've taken the semaphore locally

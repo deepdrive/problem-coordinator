@@ -2,7 +2,7 @@
   "kind": "compute#instance",
   "name": "placeholder",
   "zone": "projects/silken-impulse-217423/zones/us-west1-b",
-  "machineType": "projects/silken-impulse-217423/zones/us-west1-b/machineTypes/n1-standard-8",
+  "machineType": "projects/silken-impulse-217423/zones/us-west1-b/machineTypes/n1-standard-16",
   "displayDevice": {
     "enableDisplay": false
   },

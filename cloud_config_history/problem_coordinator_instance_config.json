@@ -1,15 +1,19 @@
 {
   "canIpForward": false,
-  "cpuPlatform": "Unknown CPU Platform",
-  "creationTimestamp": "2019-08-15T09:29:22.693-07:00",
+  "cpuPlatform": "Intel Broadwell",
+  "creationTimestamp": "2020-02-04T18:55:04.331-08:00",
   "deletionProtection": false,
   "description": "",
   "disks": [
     {
       "autoDelete": true,
       "boot": true,
-      "deviceName": "deepdrive-problem-coordinator",
+      "deviceName": "deepdrive-problem-coordinator-2",
+      "diskSizeGb": "10",
       "guestOsFeatures": [
+        {
+          "type": "UEFI_COMPATIBLE"
+        },
         {
           "type": "VIRTIO_SCSI_MULTIQUEUE"
         }
@@ -18,27 +22,33 @@
       "interface": "SCSI",
       "kind": "compute#attachedDisk",
       "licenses": [
+        "projects/cos-cloud-shielded/global/licenses/shielded-cos",
         "projects/cos-cloud/global/licenses/cos",
         "projects/cos-cloud/global/licenses/cos-pcid"
       ],
       "mode": "READ_WRITE",
-      "source": "projects/silken-impulse-217423/zones/us-west1-b/disks/deepdrive-problem-coordinator",
+      "source": "projects/silken-impulse-217423/zones/us-west1-b/disks/deepdrive-problem-coordinator-2",
       "type": "PERSISTENT"
     }
   ],
   "displayDevice": {
     "enableDisplay": false
   },
-  "id": "2011628401507972750",
+  "id": "555377653357973608",
   "kind": "compute#instance",
-  "labelFingerprint": "1DivPjZHwGE=",
+  "labelFingerprint": "bNqW0ec9U5Q=",
   "labels": {
-    "container-vm": "cos-stable-74-11895-86-0"
+    "container-vm": "cos-stable-79-12607-80-0",
+    "deepdrive": ""
   },
-  "machineType": "projects/silken-impulse-217423/zones/us-west1-b/machineTypes/custom-2-4096",
+  "machineType": "projects/silken-impulse-217423/zones/us-west1-b/machineTypes/n1-standard-2",
   "metadata": {
-    "fingerprint": "QQaihKD-vUg=",
+    "fingerprint": "ZJI5Fd5jxVQ=",
     "items": [
+      {
+        "key": "gce-container-declaration",
+        "value": "spec:\n  containers:\n    - name: deepdrive-problem-coordinator-2\n      image: gcr.io/silken-impulse-217423/deepdrive-problem-coordinator\n      stdin: true\n      tty: true\n  restartPolicy: OnFailure\n\n# This container declaration format is not public API and may change without notice. Please\n# use gcloud command-line tool or Google Cloud Console to run Containers on Google Compute Engine."
+      },
       {
         "key": "google-logging-enabled",
         "value": "true"
@@ -46,34 +56,27 @@
       {
         "key": "startup-script",
         "value": "#! /bin/bash\ndocker pull gcr.io/silken-impulse-217423/deepdrive-problem-coordinator\ntouch /var/log/notify/gce-startup-notification"
-      },
-      {
-        "key": "shutdown-script",
-        "value": "#! /bin/bash\ntouch /var/log/notify/gce-shutdown-notification\ndocker stop gcr.io/silken-impulse-217423/deepdrive-problem-coordinator"
-      },
-      {
-        "key": "gce-container-declaration",
-        "value": "spec:\n  containers:\n    - name: deepdrive-problem-coordinator\n      image: gcr.io/silken-impulse-217423/deepdrive-problem-coordinator\n      stdin: true\n      tty: true\n  restartPolicy: Always\n\n# This container declaration format is not public API and may change without notice. Please\n# use gcloud command-line tool or Google Cloud Console to run Containers on Google Compute Engine."
       }
     ],
     "kind": "compute#metadata"
   },
-  "name": "deepdrive-problem-coordinator",
+  "name": "deepdrive-problem-coordinator-2",
   "networkInterfaces": [
     {
       "accessConfigs": [
         {
           "kind": "compute#accessConfig",
           "name": "External NAT",
+          "natIP": "104.196.246.153",
           "networkTier": "PREMIUM",
           "type": "ONE_TO_ONE_NAT"
         }
       ],
-      "fingerprint": "bDppIdz5jTc=",
+      "fingerprint": "aK8ObFcaCoA=",
       "kind": "compute#networkInterface",
       "name": "nic0",
       "network": "projects/silken-impulse-217423/global/networks/default",
-      "networkIP": "10.138.15.242",
+      "networkIP": "10.138.0.10",
       "subnetwork": "projects/silken-impulse-217423/regions/us-west1/subnetworks/default"
     }
   ],
@@ -85,7 +88,7 @@
     "onHostMaintenance": "MIGRATE",
     "preemptible": false
   },
-  "selfLink": "projects/silken-impulse-217423/zones/us-west1-b/instances/deepdrive-problem-coordinator",
+  "selfLink": "projects/silken-impulse-217423/zones/us-west1-b/instances/deepdrive-problem-coordinator-2",
   "serviceAccounts": [
     {
       "email": "900617673776-compute@developer.gserviceaccount.com",
@@ -94,8 +97,13 @@
       ]
     }
   ],
+  "shieldedInstanceConfig": {
+    "enableIntegrityMonitoring": true,
+    "enableSecureBoot": false,
+    "enableVtpm": true
+  },
   "startRestricted": false,
-  "status": "TERMINATED",
+  "status": "RUNNING",
   "tags": {
     "fingerprint": "nNZ0SA7CJyk=",
     "items": [
